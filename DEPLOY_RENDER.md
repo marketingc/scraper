@@ -83,7 +83,8 @@ After deployment, your app will:
 ### 2. Access Your Application
 1. **Find your app URL** in the Render dashboard
 2. **Visit the URL** in your browser
-3. **Log in** with your admin credentials:
+3. **Wait for startup** - You may see a "Starting Up..." page for a few seconds
+4. **Log in** with your admin credentials:
    - Username: `admin` (or your custom username)
    - Password: Your configured password
 
@@ -106,6 +107,8 @@ After deployment, your app will:
 ✅ Database path: /opt/render/project/src/data/seo_reports.db
 🔧 Running production setup...
 ⏳ Waiting for database initialization...
+🔧 Initializing database-dependent components...
+✅ Components initialized successfully
 ✅ Production setup completed
 ✅ Admin user 'admin' created successfully
 🚀 SEO Crawler Web Interface running on port 10000

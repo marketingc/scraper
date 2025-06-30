@@ -17,12 +17,12 @@ const io = socketIo(server);
 const port = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Initialize database and auth
+// Initialize database first (tables will be created asynchronously)
 const db = new Database();
-const auth = new AuthManager(db);
 
-// Initialize queue manager with Socket.IO for real-time updates
-const queueManager = new QueueManager(io);
+// These will be initialized after database is ready
+let auth;
+let queueManager;
 
 // Configure session storage path
 const sessionDbPath = process.env.DATABASE_PATH 
@@ -56,14 +56,46 @@ app.use(express.static(path.join(__dirname, '../public')));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Health check endpoint for Render.com
+// Health check endpoint for Render.com (no initialization required)
 app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
     version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    initialized: !!(auth && queueManager)
   });
+});
+
+// Middleware to ensure components are initialized (applied to all routes except health)
+app.use((req, res, next) => {
+  // Skip initialization check for health endpoint
+  if (req.path === '/health') {
+    return next();
+  }
+  
+  if (!auth || !queueManager) {
+    // For HTML requests, show a loading page
+    if (req.headers.accept && req.headers.accept.includes('text/html')) {
+      return res.status(503).send(`
+        <!DOCTYPE html>
+        <html><head><title>Starting Up...</title>
+        <meta http-equiv="refresh" content="3">
+        <style>body{font-family:Arial;text-align:center;padding:50px;}</style>
+        </head><body>
+        <h2>🚀 SEO Crawler is starting up...</h2>
+        <p>Please wait while we initialize the database and components.</p>
+        <p><em>This page will refresh automatically.</em></p>
+        </body></html>
+      `);
+    } else {
+      // For API requests, return JSON error
+      return res.status(503).json({ 
+        error: 'Service temporarily unavailable. Please try again in a few moments.' 
+      });
+    }
+  }
+  next();
 });
 
 // Authentication routes
@@ -1105,7 +1137,12 @@ process.on('SIGINT', async () => {
 
 // Production setup function
 async function setupProduction() {
-  if (!isProduction) return;
+  if (!isProduction) {
+    // For development, initialize components immediately
+    auth = new AuthManager(db);
+    queueManager = new QueueManager(io);
+    return;
+  }
   
   console.log('🔧 Running production setup...');
   
@@ -1139,6 +1176,12 @@ async function setupProduction() {
       
       checkTables();
     });
+    
+    // Now initialize database-dependent components
+    console.log('🔧 Initializing database-dependent components...');
+    auth = new AuthManager(db);
+    queueManager = new QueueManager(io);
+    console.log('✅ Components initialized successfully');
     
     // Create admin user if environment variables are provided
     const adminUsername = process.env.ADMIN_USERNAME;
