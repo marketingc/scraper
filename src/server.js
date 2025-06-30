@@ -105,12 +105,72 @@ app.get('/debug/users', async (req, res) => {
       adminUsername: adminUsername,
       adminUserExists: !!adminUser,
       adminUserId: adminUser ? adminUser.id : null,
+      adminPasswordLength: adminUser && adminUser.password ? adminUser.password.length : null,
+      adminPasswordPrefix: adminUser && adminUser.password ? adminUser.password.substring(0, 10) + '...' : null,
       totalUsers: userCount,
       authSystemReady: !!auth,
       timestamp: new Date().toISOString()
     });
     
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Force recreate admin user endpoint (for debugging)
+app.post('/debug/recreate-admin', async (req, res) => {
+  if (process.env.NODE_ENV !== 'production') {
+    return res.status(404).json({ error: 'Debug endpoint only available in production' });
+  }
+  
+  try {
+    if (!auth) {
+      return res.json({ error: 'Auth system not initialized' });
+    }
+    
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    
+    if (!adminUsername || !adminPassword) {
+      return res.json({ error: 'Admin credentials not configured' });
+    }
+    
+    console.log(`🔧 Force recreating admin user '${adminUsername}'...`);
+    
+    // Delete existing admin user if exists
+    try {
+      await new Promise((resolve, reject) => {
+        db.db.run('DELETE FROM users WHERE username = ?', [adminUsername], function(err) {
+          if (err) reject(err);
+          else {
+            console.log(`🗑️  Deleted ${this.changes} existing admin users`);
+            resolve();
+          }
+        });
+      });
+    } catch (deleteError) {
+      console.error('Error deleting existing admin:', deleteError.message);
+    }
+    
+    // Create new admin user
+    const userId = await auth.createUser(adminUsername, adminPassword);
+    
+    // Verify creation
+    const newUser = await auth.getUserByUsername(adminUsername);
+    
+    res.json({
+      success: true,
+      message: 'Admin user recreated successfully',
+      userId: userId,
+      verification: {
+        userExists: !!newUser,
+        userId: newUser ? newUser.id : null,
+        passwordLength: newUser && newUser.password ? newUser.password.length : null
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error recreating admin user:', error);
     res.status(500).json({ error: error.message });
   }
 });

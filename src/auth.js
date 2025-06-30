@@ -24,10 +24,20 @@ class AuthManager {
         throw new Error('Username already exists');
       }
 
+      console.log(`🔧 User Creation Debug: Creating user '${username}'`);
+      console.log(`🔧 User Creation Debug: Original password length: ${password.length}`);
+      console.log(`🔧 User Creation Debug: Original password: '${password}'`);
+      
       const hashedPassword = await this.hashPassword(password);
+      console.log(`🔧 User Creation Debug: Hashed password length: ${hashedPassword.length}`);
+      console.log(`🔧 User Creation Debug: Hashed password starts with: ${hashedPassword.substring(0, 10)}...`);
+      
       const userId = await this.db.createUser(username, hashedPassword, email);
+      console.log(`🔧 User Creation Debug: User created with ID: ${userId}`);
+      
       return userId;
     } catch (error) {
+      console.error(`🔧 User Creation Debug: Error creating user:`, error.message);
       throw error;
     }
   }
@@ -47,11 +57,34 @@ class AuthManager {
     try {
       const user = await this.getUserByUsername(username);
       if (!user) {
+        console.log(`🔍 Auth Debug: User '${username}' not found`);
         return null;
       }
 
+      console.log(`🔍 Auth Debug: User found - ID: ${user.id}, Username: ${user.username}`);
+      console.log(`🔍 Auth Debug: Input password length: ${password.length}`);
+      console.log(`🔍 Auth Debug: Stored hash length: ${user.password ? user.password.length : 'NULL'}`);
+      console.log(`🔍 Auth Debug: Stored hash starts with: ${user.password ? user.password.substring(0, 10) + '...' : 'NULL'}`);
+
       const isValidPassword = await this.verifyPassword(password, user.password);
+      console.log(`🔍 Auth Debug: Password verification result: ${isValidPassword}`);
+      
       if (!isValidPassword) {
+        // Let's try to understand why bcrypt is failing
+        console.log(`🔍 Auth Debug: Testing bcrypt directly...`);
+        try {
+          const bcrypt = require('bcryptjs');
+          const directResult = await bcrypt.compare(password, user.password);
+          console.log(`🔍 Auth Debug: Direct bcrypt.compare result: ${directResult}`);
+          
+          // Test if the hash is valid format
+          const isValidHash = user.password && user.password.startsWith('$2');
+          console.log(`🔍 Auth Debug: Hash format valid (starts with $2): ${isValidHash}`);
+          
+        } catch (bcryptError) {
+          console.error(`🔍 Auth Debug: Bcrypt error:`, bcryptError.message);
+        }
+        
         return null;
       }
 
@@ -62,6 +95,7 @@ class AuthManager {
       const { password: _, ...userWithoutPassword } = user;
       return userWithoutPassword;
     } catch (error) {
+      console.error(`🔍 Auth Debug: Authentication error:`, error.message);
       throw error;
     }
   }
