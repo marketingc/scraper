@@ -1,6 +1,5 @@
 const express = require('express');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
 const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
@@ -17,38 +16,50 @@ const io = socketIo(server);
 const port = process.env.PORT || 3001;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Initialize database first (tables will be created asynchronously)
-const db = new Database();
+console.log(`🚀 Starting SEO Crawler in ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'} mode`);
 
-// These will be initialized after database is ready
-let auth;
+// Initialize components synchronously to avoid race conditions
+const db = new Database();
+const auth = new AuthManager(db);
+
 let queueManager;
 
-// Configure session storage path
-const sessionDbPath = process.env.DATABASE_PATH 
-  ? process.env.DATABASE_PATH 
-  : path.join(__dirname, '../data');
-
-// Ensure session directory exists
-if (!fs.existsSync(sessionDbPath)) {
-  fs.mkdirSync(sessionDbPath, { recursive: true });
-}
-
-// Session configuration
-app.use(session({
-  store: new SQLiteStore({
-    db: 'sessions.db',
-    dir: sessionDbPath
-  }),
+// Simple in-memory session store for production reliability
+const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'seo-crawler-fallback-secret-change-this',
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: isProduction, // Use secure cookies in production
+    secure: false, // Don't require HTTPS since Render.com handles SSL termination
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
-}));
+};
+
+// Use memory store instead of SQLite for sessions in production for reliability
+if (isProduction) {
+  console.log('🔧 Using memory session store for production reliability');
+} else {
+  // Only use SQLite sessions in development
+  try {
+    const SQLiteStore = require('connect-sqlite3')(session);
+    const sessionDbPath = path.join(__dirname, '../data');
+    
+    if (!fs.existsSync(sessionDbPath)) {
+      fs.mkdirSync(sessionDbPath, { recursive: true });
+    }
+    
+    sessionConfig.store = new SQLiteStore({
+      db: 'sessions.db',
+      dir: sessionDbPath
+    });
+    console.log('🔧 Using SQLite session store for development');
+  } catch (error) {
+    console.log('⚠️  SQLite session store not available, using memory store');
+  }
+}
+
+app.use(session(sessionConfig));
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
@@ -175,36 +186,14 @@ app.post('/debug/recreate-admin', async (req, res) => {
   }
 });
 
-// Middleware to ensure components are initialized (applied to all routes except health)
-app.use((req, res, next) => {
-  // Skip initialization check for health endpoint
-  if (req.path === '/health') {
-    return next();
-  }
-  
-  if (!auth || !queueManager) {
-    // For HTML requests, show a loading page
-    if (req.headers.accept && req.headers.accept.includes('text/html')) {
-      return res.status(503).send(`
-        <!DOCTYPE html>
-        <html><head><title>Starting Up...</title>
-        <meta http-equiv="refresh" content="3">
-        <style>body{font-family:Arial;text-align:center;padding:50px;}</style>
-        </head><body>
-        <h2>🚀 SEO Crawler is starting up...</h2>
-        <p>Please wait while we initialize the database and components.</p>
-        <p><em>This page will refresh automatically.</em></p>
-        </body></html>
-      `);
-    } else {
-      // For API requests, return JSON error
-      return res.status(503).json({ 
-        error: 'Service temporarily unavailable. Please try again in a few moments.' 
-      });
-    }
-  }
-  next();
-});
+// Initialize queue manager synchronously
+try {
+  queueManager = new QueueManager(io, db);
+  queueManager.startProcessor();
+  console.log('✅ Queue manager initialized successfully');
+} catch (error) {
+  console.error('⚠️  Queue manager initialization failed:', error.message);
+}
 
 // Authentication routes
 app.get('/login', redirectIfLoggedIn, (req, res) => {
@@ -221,15 +210,6 @@ app.post('/login', redirectIfLoggedIn, async (req, res) => {
       console.log('❌ Login failed: Missing username or password');
       return res.render('login', { 
         error: 'Username and password are required', 
-        message: null 
-      });
-    }
-
-    // Check if components are initialized
-    if (!auth) {
-      console.log('❌ Login failed: Authentication system not initialized');
-      return res.render('login', { 
-        error: 'System is still starting up. Please wait a moment and try again.', 
         message: null 
       });
     }
@@ -1272,117 +1252,12 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-// Database and component setup function
-async function setupApplication() {
-  console.log('🔧 Setting up application...');
-  
-  try {
-    // Wait for database initialization in both dev and production
-    await new Promise((resolve, reject) => {
-      let attempts = 0;
-      const maxAttempts = 30;
-      
-      const checkTables = () => {
-        attempts++;
-        // Use a safer query that doesn't cause errors if tables don't exist
-        db.db.all("SELECT name FROM sqlite_master WHERE type='table'", (err, rows) => {
-          if (err) {
-            console.log(`⚠️  Database error: ${err.message}, retrying... (${attempts}/${maxAttempts})`);
-            if (attempts >= maxAttempts) {
-              reject(new Error('Database initialization timeout'));
-            } else {
-              setTimeout(checkTables, 1000);
-            }
-          } else {
-            // Check if url_versions table exists in the results
-            const hasUrlVersions = rows && rows.some(row => row.name === 'url_versions');
-            if (hasUrlVersions) {
-              console.log('✅ Database tables initialized successfully');
-              resolve();
-            } else {
-              console.log(`⏳ Waiting for database initialization... (${attempts}/${maxAttempts})`);
-              if (attempts >= maxAttempts) {
-                reject(new Error('Database tables not created within timeout'));
-              } else {
-                setTimeout(checkTables, 1000);
-              }
-            }
-          }
-        });
-      };
-      
-      checkTables();
-    });
-    
-    // Now initialize database-dependent components
-    console.log('🔧 Initializing application components...');
-    auth = new AuthManager(db);
-    queueManager = new QueueManager(io, db); // Pass the existing database instance
-    
-    // Start the queue processor after everything is ready
-    queueManager.startProcessor();
-    console.log('✅ Components initialized successfully');
-    
-  } catch (error) {
-    console.error('❌ Application setup failed:', error.message);
-    throw error;
-  }
-  
-  // Production-specific setup
-  if (!isProduction) {
-    console.log('✅ Development setup completed');
-    return;
-  }
-  
-  console.log('🔧 Running production-specific setup...');
-  
-  try {
-    // Create admin user if environment variables are provided
-    const adminUsername = process.env.ADMIN_USERNAME;
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    
-    console.log(`🔧 Checking admin user setup - Username: '${adminUsername}', Password provided: ${!!adminPassword}`);
-    
-    if (adminUsername && adminPassword) {
-      try {
-        const existingUser = await auth.getUserByUsername(adminUsername);
-        
-        if (!existingUser) {
-          await auth.createUser(adminUsername, adminPassword);
-          console.log(`✅ Admin user '${adminUsername}' created successfully with password length: ${adminPassword.length}`);
-          
-          // Verify the user was created correctly
-          const verifyUser = await auth.getUserByUsername(adminUsername);
-          if (verifyUser) {
-            console.log(`✅ Admin user verification successful - User ID: ${verifyUser.id}`);
-          } else {
-            console.error('❌ Admin user verification failed - User not found after creation');
-          }
-        } else {
-          console.log(`ℹ️  Admin user '${adminUsername}' already exists - ID: ${existingUser.id}`);
-        }
-      } catch (error) {
-        console.error('⚠️  Error creating admin user:', error.message);
-      }
-    }
-    
-    console.log('✅ Production setup completed');
-  } catch (error) {
-    console.error('❌ Production setup failed:', error.message);
-  }
-}
-
-// Start server with application setup
-async function startServer() {
-  await setupApplication();
-  
-  server.listen(port, () => {
-    console.log(`🚀 SEO Crawler Web Interface running on port ${port}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`❤️  Health check available at: /health`);
-  });
-}
-
-startServer();
+// Simple server startup
+server.listen(port, () => {
+  console.log(`🚀 SEO Crawler Web Interface running on port ${port}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`❤️  Health check available at: /health`);
+  console.log(`✅ Server started successfully with hardcoded authentication`);
+});
 
 module.exports = app;
