@@ -1,0 +1,449 @@
+<!-- Interactive SEO Score Calculator Component -->
+<div class="score-calculator-widget" style="margin: 2rem 0;">
+    <div class="card border-primary">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-calculator me-2"></i>
+                Interactive SEO Score Calculator
+                <button class="btn btn-outline-light btn-sm float-end" type="button" data-bs-toggle="collapse" data-bs-target="#scoreCalculator" aria-expanded="false">
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+            </h5>
+        </div>
+        <div class="collapse" id="scoreCalculator">
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Select SEO issues below to calculate their impact on the final score. The system starts with 100 points and deducts penalties for each issue.
+                </p>
+                
+                <div class="row">
+                    <!-- Meta Data Issues -->
+                    <div class="col-lg-4 mb-3">
+                        <h6 class="fw-bold text-primary">
+                            <i class="fas fa-tags me-1"></i>
+                            Meta Data Issues
+                        </h6>
+                        <div class="penalty-checklist">
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="20" id="calc-missing-title">
+                                    <label class="form-check-label" for="calc-missing-title">
+                                        Missing Title Tag
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-20 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="15" id="calc-missing-desc">
+                                    <label class="form-check-label" for="calc-missing-desc">
+                                        Missing Meta Description
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-15 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="10" id="calc-title-long">
+                                    <label class="form-check-label" for="calc-title-long">
+                                        Title Too Long (>60 chars)
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-10 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="8" id="calc-desc-long">
+                                    <label class="form-check-label" for="calc-desc-long">
+                                        Description Too Long (>160 chars)
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-8 pts</span>
+                            </div>
+                        </div>
+                        
+                        <h6 class="fw-bold text-primary mt-3">
+                            <i class="fas fa-heading me-1"></i>
+                            Content Structure
+                        </h6>
+                        <div class="penalty-checklist">
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="15" id="calc-missing-h1">
+                                    <label class="form-check-label" for="calc-missing-h1">
+                                        Missing H1 Tag
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-15 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="8" id="calc-multiple-h1">
+                                    <label class="form-check-label" for="calc-multiple-h1">
+                                        Multiple H1 Tags
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-8 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="5" id="calc-missing-canonical">
+                                    <label class="form-check-label" for="calc-missing-canonical">
+                                        Missing Canonical URL
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-5 pts</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Technical Issues -->
+                    <div class="col-lg-4 mb-3">
+                        <h6 class="fw-bold text-primary">
+                            <i class="fas fa-server me-1"></i>
+                            Technical Issues
+                        </h6>
+                        <div class="penalty-checklist">
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="35" id="calc-server-error">
+                                    <label class="form-check-label" for="calc-server-error">
+                                        Server Error (5xx)
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-35 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="25" id="calc-client-error">
+                                    <label class="form-check-label" for="calc-client-error">
+                                        Client Error (4xx)
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-25 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="15" id="calc-very-slow">
+                                    <label class="form-check-label" for="calc-very-slow">
+                                        Very Slow Response (>5s)
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-15 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="12" id="calc-ssl-issues">
+                                    <label class="form-check-label" for="calc-ssl-issues">
+                                        SSL Certificate Issues
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-12 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="10" id="calc-moderate-slow">
+                                    <label class="form-check-label" for="calc-moderate-slow">
+                                        Moderate Slow (3-5s)
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-10 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="10" id="calc-redirects">
+                                    <label class="form-check-label" for="calc-redirects">
+                                        Redirects (3xx)
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-10 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="8" id="calc-non-https">
+                                    <label class="form-check-label" for="calc-non-https">
+                                        Non-HTTPS URL
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-8 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="5" id="calc-somewhat-slow">
+                                    <label class="form-check-label" for="calc-somewhat-slow">
+                                        Somewhat Slow (1-3s)
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-5 pts</span>
+                            </div>
+                        </div>
+                        
+                        <h6 class="fw-bold text-primary mt-3">
+                            <i class="fas fa-images me-1"></i>
+                            Image Issues
+                        </h6>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex align-items-center">
+                                <label class="form-label me-2 mb-0">Images without Alt Text:</label>
+                                <input type="number" class="form-control form-control-sm" id="calc-images-without-alt" 
+                                       min="0" max="50" value="0" style="width: 70px;">
+                            </div>
+                            <span class="text-danger fw-bold" id="calc-images-penalty">-0 pts</span>
+                        </div>
+                        <small class="text-muted">Penalty: 2 points per image (max 20 points)</small>
+                    </div>
+                    
+                    <!-- Schema Issues -->
+                    <div class="col-lg-4 mb-3">
+                        <h6 class="fw-bold text-primary">
+                            <i class="fas fa-code me-1"></i>
+                            Schema Issues
+                        </h6>
+                        <div class="penalty-checklist">
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="10" id="calc-no-schema">
+                                    <label class="form-check-label" for="calc-no-schema">
+                                        No Structured Data
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-10 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="5" id="calc-missing-org">
+                                    <label class="form-check-label" for="calc-missing-org">
+                                        Missing Organization Schema
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-5 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="4" id="calc-missing-breadcrumb">
+                                    <label class="form-check-label" for="calc-missing-breadcrumb">
+                                        Missing Breadcrumb Schema
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-4 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="3" id="calc-missing-website">
+                                    <label class="form-check-label" for="calc-missing-website">
+                                        Missing Website Schema
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-3 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="3" id="calc-schema-errors">
+                                    <label class="form-check-label" for="calc-schema-errors">
+                                        Schema Validation Errors
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-3 pts</span>
+                            </div>
+                        </div>
+                        
+                        <h6 class="fw-bold text-primary mt-3">
+                            <i class="fas fa-mobile-alt me-1"></i>
+                            PWA Issues
+                        </h6>
+                        <div class="penalty-checklist">
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="8" id="calc-no-manifest">
+                                    <label class="form-check-label" for="calc-no-manifest">
+                                        Missing Web App Manifest
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-8 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="5" id="calc-no-sw">
+                                    <label class="form-check-label" for="calc-no-sw">
+                                        Missing Service Worker
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-5 pts</span>
+                            </div>
+                            <div class="form-check d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <input class="form-check-input penalty-check" type="checkbox" data-penalty="2" id="calc-no-touch-icons">
+                                    <label class="form-check-label" for="calc-no-touch-icons">
+                                        Missing Apple Touch Icons
+                                    </label>
+                                </div>
+                                <span class="text-danger fw-bold">-2 pts</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Score Display -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card bg-light">
+                            <div class="card-body text-center">
+                                <div class="row align-items-center">
+                                    <div class="col-md-4">
+                                        <div class="score-circle mx-auto mb-2" style="width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; color: white;" id="calc-score-circle">
+                                            <span id="calc-final-score">100</span>
+                                        </div>
+                                        <div class="fw-bold" id="calc-score-label">Excellent</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="text-muted">Total Penalties</h6>
+                                        <div class="h4 text-danger" id="calc-total-penalties">0 points</div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6 class="text-muted">Formula</h6>
+                                        <div class="small text-muted">
+                                            <code>Score = max(0, 100 - penalties)</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="row mt-3">
+                    <div class="col-12 text-center">
+                        <button type="button" class="btn btn-outline-secondary btn-sm me-2" id="calc-reset">
+                            <i class="fas fa-undo me-1"></i>
+                            Reset All
+                        </button>
+                        <a href="/seo-scoring-breakdown" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-external-link-alt me-1"></i>
+                            View Full Breakdown
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // Initialize calculator when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeScoreCalculator();
+    });
+    
+    function initializeScoreCalculator() {
+        const penaltyChecks = document.querySelectorAll('.penalty-check');
+        const imagesInput = document.getElementById('calc-images-without-alt');
+        const finalScoreElement = document.getElementById('calc-final-score');
+        const scoreCircle = document.getElementById('calc-score-circle');
+        const scoreLabel = document.getElementById('calc-score-label');
+        const totalPenaltiesElement = document.getElementById('calc-total-penalties');
+        const imagesPenaltyElement = document.getElementById('calc-images-penalty');
+        const resetButton = document.getElementById('calc-reset');
+        
+        // Check if elements exist (for pages that don't include this component)
+        if (!finalScoreElement) return;
+        
+        function calculateScore() {
+            let totalPenalties = 0;
+            
+            // Calculate checkbox penalties
+            penaltyChecks.forEach(function(checkbox) {
+                if (checkbox.checked) {
+                    totalPenalties += parseInt(checkbox.dataset.penalty);
+                }
+            });
+            
+            // Calculate image penalties
+            const imagesWithoutAlt = parseInt(imagesInput.value) || 0;
+            const imagePenalty = Math.min(imagesWithoutAlt * 2, 20);
+            totalPenalties += imagePenalty;
+            
+            // Update image penalty display
+            imagesPenaltyElement.textContent = '-' + imagePenalty + ' pts';
+            
+            // Calculate final score
+            const finalScore = Math.max(0, 100 - totalPenalties);
+            
+            // Update displays
+            finalScoreElement.textContent = finalScore;
+            totalPenaltiesElement.textContent = totalPenalties + ' points';
+            
+            // Update score circle color and label
+            let colorClass, label;
+            if (finalScore >= 80) {
+                colorClass = '#28a745'; // Green
+                label = 'Excellent';
+            } else if (finalScore >= 60) {
+                colorClass = '#ffc107'; // Yellow
+                label = 'Good';
+            } else if (finalScore >= 40) {
+                colorClass = '#fd7e14'; // Orange
+                label = 'Fair';
+            } else {
+                colorClass = '#dc3545'; // Red
+                label = 'Poor';
+            }
+            
+            scoreCircle.style.backgroundColor = colorClass;
+            scoreLabel.textContent = label;
+            scoreLabel.className = 'fw-bold';
+        }
+        
+        function resetCalculator() {
+            penaltyChecks.forEach(function(checkbox) {
+                checkbox.checked = false;
+            });
+            imagesInput.value = 0;
+            calculateScore();
+        }
+        
+        // Add event listeners
+        penaltyChecks.forEach(function(checkbox) {
+            checkbox.addEventListener('change', calculateScore);
+        });
+        
+        if (imagesInput) {
+            imagesInput.addEventListener('input', calculateScore);
+        }
+        
+        if (resetButton) {
+            resetButton.addEventListener('click', resetCalculator);
+        }
+        
+        // Initialize with current values
+        calculateScore();
+    }
+})();
+</script>
+
+<style>
+.score-calculator-widget .penalty-checklist {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 0.75rem;
+}
+
+.score-calculator-widget .form-check {
+    background: white;
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.score-calculator-widget .form-check:hover {
+    background: #f0f8ff;
+    border-color: #007bff;
+}
+
+.score-calculator-widget .penalty-check:checked + .form-check-label {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+</style>

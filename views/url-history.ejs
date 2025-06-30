@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Crawler - URL Version History</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: -22px;
+            top: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 0.8rem;
+            border: 3px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .version-latest .timeline-marker {
+            background: #28a745;
+        }
+        
+        .version-previous .timeline-marker {
+            background: #6c757d;
+        }
+        
+        .version-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #007bff;
+        }
+        
+        .version-latest .version-card {
+            border-left-color: #28a745;
+        }
+        
+        .score-display {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .score-excellent { background: #28a745; }
+        .score-good { background: #ffc107; color: #000; }
+        .score-fair { background: #fd7e14; }
+        .score-poor { background: #dc3545; }
+        
+        .comparison-btn {
+            margin: 2px;
+        }
+        
+        .url-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .change-indicator {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .change-improved {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .change-degraded {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .change-same {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .meta-info {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        
+        .batch-link {
+            color: #007bff;
+            text-decoration: none;
+        }
+        
+        .batch-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>SEO Crawler
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports-overview">
+                            <i class="fas fa-chart-bar me-1"></i>Reports Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/browse">
+                            <i class="fas fa-history me-1"></i>Browse Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/batches">
+                            <i class="fas fa-tasks me-1"></i>Batches
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/url-versions">
+                            <i class="fas fa-code-branch me-1"></i>URL Versions
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i><%= user.username %>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        <!-- Header -->
+        <div class="url-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                        <i class="fas fa-history me-2"></i>Version History
+                    </h2>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-external-link-alt me-2"></i>
+                        <a href="<%= url %>" target="_blank" class="text-white text-decoration-none">
+                            <%= url %>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="text-white">
+                        <div class="h4 mb-1"><%= versions.length %> Versions</div>
+                        <small>First crawled: <%= new Date(versions[versions.length - 1].created_at).toLocaleDateString() %></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/url-versions">URL Versions</a></li>
+                            <li class="breadcrumb-item active">History</li>
+                        </ol>
+                    </nav>
+                    <div>
+                        <% if (versions.length > 1) { %>
+                            <a href="/url-compare?url=<%= encodeURIComponent(url) %>&v1=<%= versions[1].version_number %>&v2=<%= versions[0].version_number %>" class="btn btn-info me-2">
+                                <i class="fas fa-exchange-alt me-1"></i>Compare Latest
+                            </a>
+                        <% } %>
+                        <button class="btn btn-outline-secondary" onclick="exportHistory()">
+                            <i class="fas fa-download me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline">
+            <% versions.forEach((version, index) => { %>
+                <% const isLatest = index === 0; %>
+                <% const previousVersion = index < versions.length - 1 ? versions[index + 1] : null; %>
+                <% const scoreChange = previousVersion ? version.seo_score - previousVersion.seo_score : 0; %>
+                <% const scoreClass = version.seo_score >= 80 ? 'score-excellent' : version.seo_score >= 60 ? 'score-good' : version.seo_score >= 40 ? 'score-fair' : 'score-poor'; %>
+                
+                <div class="timeline-item <%= isLatest ? 'version-latest' : 'version-previous' %>">
+                    <div class="timeline-marker">
+                        v<%= version.version_number %>
+                    </div>
+                    
+                    <div class="version-card">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <!-- Version Header -->
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h5 class="mb-1">
+                                            Version <%= version.version_number %>
+                                            <% if (isLatest) { %>
+                                                <span class="badge bg-success ms-2">Latest</span>
+                                            <% } %>
+                                        </h5>
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            <%= new Date(version.created_at).toLocaleDateString() %> at <%= new Date(version.created_at).toLocaleTimeString() %>
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <% if (scoreChange > 0) { %>
+                                            <span class="change-indicator change-improved">
+                                                <i class="fas fa-arrow-up"></i> +<%= scoreChange %>
+                                            </span>
+                                        <% } else if (scoreChange < 0) { %>
+                                            <span class="change-indicator change-degraded">
+                                                <i class="fas fa-arrow-down"></i> <%= scoreChange %>
+                                            </span>
+                                        <% } else if (previousVersion) { %>
+                                            <span class="change-indicator change-same">
+                                                <i class="fas fa-minus"></i> No change
+                                            </span>
+                                        <% } %>
+                                    </div>
+                                </div>
+                                
+                                <!-- Content -->
+                                <div class="mb-3">
+                                    <h6 class="text-primary">Title</h6>
+                                    <p class="mb-2"><%= version.title || 'No title' %></p>
+                                    
+                                    <h6 class="text-primary">Description</h6>
+                                    <p class="mb-0"><%= version.description || 'No description' %></p>
+                                </div>
+                                
+                                <!-- Meta Information -->
+                                <div class="meta-info">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <strong>Batch:</strong> 
+                                                <% if (version.batch_name) { %>
+                                                    <a href="/batch/<%= version.batch_id %>" class="batch-link"><%= version.batch_name %></a>
+                                                <% } else { %>
+                                                    Individual crawl
+                                                <% } %>
+                                            </small>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <small class="text-muted">
+                                                <strong>Total crawls for this URL:</strong> <%= version.total_crawls %>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 text-center">
+                                <!-- SEO Score -->
+                                <div class="mb-3">
+                                    <div class="score-display <%= scoreClass %> mx-auto">
+                                        <%= version.seo_score %>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">SEO Score</small>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="d-grid gap-2">
+                                    <% if (index < versions.length - 1) { %>
+                                        <a href="/url-compare?url=<%= encodeURIComponent(url) %>&v1=<%= versions[index + 1].version_number %>&v2=<%= version.version_number %>" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-exchange-alt me-1"></i>Compare with v<%= versions[index + 1].version_number %>
+                                        </a>
+                                    <% } %>
+                                    
+                                    <% if (index > 0) { %>
+                                        <a href="/url-compare?url=<%= encodeURIComponent(url) %>&v1=<%= version.version_number %>&v2=<%= versions[index - 1].version_number %>" 
+                                           class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-exchange-alt me-1"></i>Compare with v<%= versions[index - 1].version_number %>
+                                        </a>
+                                    <% } %>
+                                    
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="viewDetails('<%= version.version_number %>')">
+                                        <i class="fas fa-eye me-1"></i>View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+
+        <!-- Version Selector for Quick Compare -->
+        <div class="card mt-4">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="fas fa-exchange-alt me-2"></i>Quick Compare
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Compare Version</label>
+                        <select class="form-select" id="compareV1">
+                            <% versions.forEach(version => { %>
+                                <option value="<%= version.version_number %>">v<%= version.version_number %> (Score: <%= version.seo_score %>)</option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">With Version</label>
+                        <select class="form-select" id="compareV2">
+                            <% versions.forEach(version => { %>
+                                <option value="<%= version.version_number %>">v<%= version.version_number %> (Score: <%= version.seo_score %>)</option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-primary" onclick="quickCompare()">
+                            <i class="fas fa-exchange-alt me-1"></i>Compare Selected
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Version Details Modal -->
+    <div class="modal fade" id="detailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-info-circle me-2"></i>Version Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="detailsModalBody">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const url = '<%= url %>';
+        const versions = <%- JSON.stringify(versions) %>;
+        
+        // Set default comparison versions (latest and previous)
+        document.addEventListener('DOMContentLoaded', function() {
+            if (versions.length > 1) {
+                document.getElementById('compareV1').value = versions[1].version_number;
+                document.getElementById('compareV2').value = versions[0].version_number;
+            }
+        });
+        
+        function quickCompare() {
+            const v1 = document.getElementById('compareV1').value;
+            const v2 = document.getElementById('compareV2').value;
+            
+            if (v1 === v2) {
+                alert('Please select different versions to compare');
+                return;
+            }
+            
+            window.location.href = `/url-compare?url=${encodeURIComponent(url)}&v1=${v1}&v2=${v2}`;
+        }
+        
+        async function viewDetails(version) {
+            const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+            const modalBody = document.getElementById('detailsModalBody');
+            
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            `;
+            
+            modal.show();
+            
+            try {
+                const response = await fetch(`/api/url/version?url=${encodeURIComponent(url)}&version=${version}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    modalBody.innerHTML = generateDetailsHTML(data);
+                } else {
+                    modalBody.innerHTML = `<div class="alert alert-danger">Failed to load details: ${data.error}</div>`;
+                }
+            } catch (error) {
+                modalBody.innerHTML = `<div class="alert alert-danger">Error loading details: ${error.message}</div>`;
+            }
+        }
+        
+        function generateDetailsHTML(version) {
+            const analysisData = version.analysis_data;
+            const recommendations = version.recommendations;
+            
+            return `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">SEO Metrics</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>SEO Score:</strong> ${version.seo_score}</li>
+                            <li><strong>Title Length:</strong> ${analysisData.meta?.titleLength || 'N/A'}</li>
+                            <li><strong>Description Length:</strong> ${analysisData.meta?.descriptionLength || 'N/A'}</li>
+                            <li><strong>Status Code:</strong> ${analysisData.statusCode || 'N/A'}</li>
+                        </ul>
+                        
+                        <h6 class="text-primary mt-3">Meta Information</h6>
+                        <div class="bg-light p-2 rounded">
+                            <small><strong>Title:</strong> ${version.title || 'No title'}</small><br>
+                            <small><strong>Description:</strong> ${version.description || 'No description'}</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Recommendations</h6>
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            ${recommendations.map(rec => `
+                                <div class="alert alert-${rec.priority === 'high' ? 'danger' : rec.priority === 'medium' ? 'warning' : 'info'} py-2">
+                                    <small><strong>${rec.issue}:</strong> ${rec.suggestion}</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function exportHistory() {
+            // Convert version history to CSV
+            const csvContent = "data:text/csv;charset=utf-8," + 
+                "Version,SEO Score,Title,Description,Created At,Batch\n" +
+                versions.map(v => 
+                    `${v.version_number},${v.seo_score},"${(v.title || '').replace(/"/g, '""')}","${(v.description || '').replace(/"/g, '""')}",${v.created_at},"${(v.batch_name || 'Individual').replace(/"/g, '""')}"`
+                ).join('\n');
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            const filename = `url-history-${new URL('<%= url %>').hostname}-${new Date().toISOString().split('T')[0]}.csv`;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Crawler - Reports Overview</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .reports-table {
+            font-size: 0.9rem;
+        }
+        .url-column {
+            max-width: 250px;
+            word-break: break-all;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+        }
+        
+        /* Status Code Styling */
+        .status-success { background-color: #28a745; }
+        .status-redirect { background-color: #ffc107; }
+        .status-error { background-color: #dc3545; }
+        .status-unknown { background-color: #6c757d; }
+        
+        .response-time {
+            font-size: 0.7rem;
+            color: #6c757d;
+            margin-top: 2px;
+        }
+        
+        .redirect-chain {
+            font-size: 0.7rem;
+            color: #17a2b8;
+            margin-top: 2px;
+        }
+        
+        .status-column {
+            min-width: 100px;
+        }
+        
+        .status-health-good { color: #28a745; }
+        .status-health-warning { color: #ffc107; }
+        .status-health-danger { color: #dc3545; }
+        .score-circle {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            margin: 0 auto;
+        }
+        .score-excellent { background: #28a745; }
+        .score-good { background: #ffc107; color: #000; }
+        .score-fair { background: #fd7e14; }
+        .score-poor { background: #dc3545; }
+        
+        .issue-count {
+            background: #dc3545;
+            color: white;
+            border-radius: 12px;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        .metric-item {
+            font-size: 0.8rem;
+            margin-bottom: 2px;
+        }
+        
+        .table-header-sticky {
+            position: sticky;
+            top: 0;
+            background: #343a40;
+            z-index: 10;
+        }
+        
+        .table-responsive {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .filter-controls {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .export-btn {
+            position: relative;
+        }
+        
+        .summary-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        /* Version Badge Styling */
+        .version-badge-small {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .badge-sm {
+            font-size: 0.6rem;
+            padding: 1px 4px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>SEO Crawler
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/reports-overview">
+                            <i class="fas fa-chart-bar me-1"></i>Reports Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/browse">
+                            <i class="fas fa-history me-1"></i>Browse Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/batches">
+                            <i class="fas fa-tasks me-1"></i>Batches
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/url-versions">
+                            <i class="fas fa-code-branch me-1"></i>URL Versions
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i><%= user.username %>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container-fluid my-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2><i class="fas fa-chart-bar me-2"></i>SEO Reports Overview</h2>
+                    <div>
+                        <a href="/" class="btn btn-primary me-2">
+                            <i class="fas fa-plus me-2"></i>New Analysis
+                        </a>
+                        <button class="btn btn-outline-success me-2 export-btn" onclick="exportToCSV()">
+                            <i class="fas fa-download me-2"></i>Export CSV
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="showBulkDeleteModal()" <% if (reports.length === 0) { %>disabled<% } %>>
+                            <i class="fas fa-trash-alt me-2"></i>Delete All Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="summary-stats">
+            <div class="row">
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number"><%= reports.length %></span>
+                    <span class="stat-label">Total Reports</span>
+                </div>
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number status-health-good"><%= reports.filter(r => r.crawl_status === 'success').length %></span>
+                    <span class="stat-label">Successful Crawls</span>
+                </div>
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number status-health-danger"><%= reports.filter(r => r.crawl_status === 'failed').length %></span>
+                    <span class="stat-label">Failed Crawls</span>
+                </div>
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number"><%= reports.filter(r => r.crawl_status === 'success' && r.seo_score >= 80).length %></span>
+                    <span class="stat-label">Excellent SEO</span>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number status-health-good"><%= reports.filter(r => { if (r.crawl_status === 'failed') return false; const data = JSON.parse(r.analysis_data); return data.statusCode >= 200 && data.statusCode < 300; }).length %></span>
+                    <span class="stat-label">Healthy Status (2xx)</span>
+                </div>
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number status-health-warning"><%= reports.filter(r => { if (r.crawl_status === 'failed') return false; const data = JSON.parse(r.analysis_data); return data.statusCode >= 300 && data.statusCode < 400; }).length %></span>
+                    <span class="stat-label">Redirects (3xx)</span>
+                </div>
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number status-health-danger"><%= reports.filter(r => { if (r.crawl_status === 'failed') return false; const data = JSON.parse(r.analysis_data); return data.statusCode >= 400; }).length %></span>
+                    <span class="stat-label">Error Status (4xx/5xx)</span>
+                </div>
+                <div class="col-md-3 stat-item">
+                    <% const successfulReports = reports.filter(r => r.crawl_status === 'success'); %>
+                    <span class="stat-number"><%= successfulReports.length > 0 ? Math.round(successfulReports.reduce((sum, r) => { const data = JSON.parse(r.analysis_data); return sum + (data.statusInfo?.responseTime || 0); }, 0) / successfulReports.length) : 0 %>ms</span>
+                    <span class="stat-label">Avg Response Time</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filter-controls">
+            <div class="row align-items-center">
+                <div class="col-md-2">
+                    <label class="form-label">Search URLs:</label>
+                    <input type="text" class="form-control" id="urlFilter" placeholder="Filter by URL or title">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Crawl Status:</label>
+                    <select class="form-select" id="crawlStatusFilter">
+                        <option value="">All Status</option>
+                        <option value="success">Successful Only</option>
+                        <option value="failed">Failed Only</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">SEO Score:</label>
+                    <select class="form-select" id="scoreFilter">
+                        <option value="">All Scores</option>
+                        <option value="excellent">Excellent (80-100)</option>
+                        <option value="good">Good (60-79)</option>
+                        <option value="fair">Fair (40-59)</option>
+                        <option value="poor">Poor (0-39)</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">HTTP Status:</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Status</option>
+                        <option value="2xx">2xx Success</option>
+                        <option value="3xx">3xx Redirects</option>
+                        <option value="4xx">4xx Client Error</option>
+                        <option value="5xx">5xx Server Error</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label">Date:</label>
+                    <select class="form-select" id="dateFilter">
+                        <option value="">All</option>
+                        <option value="today">Today</option>
+                        <option value="week">Week</option>
+                        <option value="month">Month</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Results:</label>
+                    <select class="form-select" id="limitFilter">
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                        <option value="all">Show All</option>
+                    </select>
+                </div>
+                <div class="col-md-1 text-end">
+                    <label class="form-label d-block">&nbsp;</label>
+                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Table -->
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-table me-2"></i>Detailed Reports Analysis
+                    <span class="badge bg-primary ms-2" id="resultsCount"><%= reports.length %> reports</span>
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover reports-table mb-0" id="reportsTable">
+                    <thead class="table-dark table-header-sticky">
+                        <tr>
+                            <th width="200">URL</th>
+                            <th width="60" class="text-center">Version</th>
+                            <th width="80" class="text-center">Crawl Status</th>
+                            <th width="100" class="text-center status-column">HTTP Status</th>
+                            <th width="80" class="text-center">SEO Score</th>
+                            <th width="150">Title & Meta</th>
+                            <th width="120">Content</th>
+                            <th width="120">Images</th>
+                            <th width="120">Links</th>
+                            <th width="120">Schema</th>
+                            <th width="100">PWA</th>
+                            <th width="80">Issues</th>
+                            <th width="120">Analyzed</th>
+                            <th width="100">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% reports.forEach(report => { 
+                            const data = JSON.parse(report.analysis_data);
+                            const recommendations = JSON.parse(report.recommendations);
+                            const isFailed = report.crawl_status === 'failed';
+                            
+                            // Calculate metrics with safe defaults
+                            const titleLength = data.meta ? (data.meta.title || '').length : 0;
+                            const descLength = data.meta ? (data.meta.description || '').length : 0;
+                            const h1Count = data.headings && data.headings.h1 ? data.headings.h1.length : 0;
+                            const imageCount = Array.isArray(data.images) ? data.images.length : 0;
+                            const missingAlt = Array.isArray(data.images) ? data.images.filter(img => !img.hasAlt).length : 0;
+                            const linkCount = Array.isArray(data.links) ? data.links.length : 0;
+                            const internalLinks = Array.isArray(data.links) ? data.links.filter(link => link.type === 'internal').length : 0;
+                            const externalLinks = Array.isArray(data.links) ? data.links.filter(link => link.type === 'external').length : 0;
+                            const schemaCount = Array.isArray(data.schema) ? data.schema.length : 0;
+                            const pwaScore = data.pwa ? (data.pwa.score || 0) : 0;
+                            const totalIssues = Array.isArray(recommendations) ? recommendations.filter(r => r.type === 'critical' || r.type === 'warning').length : 0;
+                            
+                            // Status code styling
+                            const statusCode = data.statusCode || 0;
+                            let statusClass = 'status-unknown';
+                            let statusText = 'Unknown';
+                            if (isFailed) {
+                                statusClass = 'status-error';
+                                statusText = 'Failed';
+                            } else if (statusCode >= 200 && statusCode < 300) {
+                                statusClass = 'status-success';
+                                statusText = 'Success';
+                            } else if (statusCode >= 300 && statusCode < 400) {
+                                statusClass = 'status-redirect';
+                                statusText = 'Redirect';
+                            } else if (statusCode >= 400) {
+                                statusClass = 'status-error';
+                                statusText = 'Error';
+                            }
+                            
+                            // Score styling
+                            let scoreClass = 'score-poor';
+                            if (!isFailed) {
+                                if (report.seo_score >= 80) scoreClass = 'score-excellent';
+                                else if (report.seo_score >= 60) scoreClass = 'score-good';
+                                else if (report.seo_score >= 40) scoreClass = 'score-fair';
+                            }
+                        %> 
+                        <tr data-score="<%= report.seo_score %>" data-url="<%= report.url.toLowerCase() %>" data-title="<%= report.title.toLowerCase() %>" data-date="<%= report.created_at %>" data-status="<%= Math.floor(statusCode / 100) %>xx" data-crawl-status="<%= report.crawl_status %>" class="<%= isFailed ? 'table-danger-subtle' : '' %>">
+                            <td class="url-column">
+                                <div class="fw-bold text-truncate" title="<%= report.url %>">
+                                    <% if (isFailed) { %>
+                                        <i class="fas fa-exclamation-triangle text-danger me-1"></i>
+                                        <%= report.url.replace(/^https?:\/\//, '').substring(0, 35) %>...
+                                    <% } else { %>
+                                        <a href="<%= report.url %>" target="_blank" class="text-decoration-none">
+                                            <i class="fas fa-external-link-alt me-1 text-muted"></i>
+                                            <%= report.url.replace(/^https?:\/\//, '').substring(0, 35) %>...
+                                        </a>
+                                    <% } %>
+                                </div>
+                                <div class="text-muted small text-truncate" title="<%= report.title %>">
+                                    <%= report.title.substring(0, 40) %>...
+                                </div>
+                                <% if (isFailed && data.error && data.error.message) { %>
+                                    <div class="text-danger small mt-1">
+                                        <i class="fas fa-info-circle me-1"></i>Error: <%= data.error.message.substring(0, 30) %>...
+                                    </div>
+                                <% } %>
+                            </td>
+                            
+                            <!-- Version Column -->
+                            <td class="text-center">
+                                <% if (report.version_number && report.total_crawls) { %>
+                                    <div class="version-badge-small">
+                                        v<%= report.version_number %>
+                                    </div>
+                                    <% if (report.total_crawls > 1) { %>
+                                        <small class="text-muted d-block">of <%= report.total_crawls %></small>
+                                        <% if (report.version_number === report.current_version) { %>
+                                            <span class="badge bg-success badge-sm">Latest</span>
+                                        <% } %>
+                                    <% } %>
+                                <% } else { %>
+                                    <span class="text-muted">v1</span>
+                                <% } %>
+                            </td>
+                            
+                            <td class="text-center">
+                                <% if (isFailed) { %>
+                                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Crawl Failed">
+                                        <i class="fas fa-times me-1"></i>Failed
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge bg-success" data-bs-toggle="tooltip" title="Crawl Successful">
+                                        <i class="fas fa-check me-1"></i>Success
+                                    </span>
+                                <% } %>
+                            </td>
+                            
+                            <td class="text-center">
+                                <% if (isFailed) { %>
+                                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="No HTTP status - crawl failed">
+                                        N/A
+                                    </span>
+                                <% } else { %>
+                                    <span class="badge <%= statusClass %>" data-bs-toggle="tooltip" title="<%= statusText %> - <%= statusCode %>">
+                                        <%= statusCode %>
+                                    </span>
+                                    <% if (data.statusInfo && data.statusInfo.responseTime) { %>
+                                        <div class="response-time"><%= data.statusInfo.responseTime %>ms</div>
+                                    <% } %>
+                                    <% if (data.statusInfo && data.statusInfo.redirectChain && data.statusInfo.redirectChain.length > 1) { %>
+                                        <div class="redirect-chain"><%= data.statusInfo.redirectChain.length - 1 %> redirects</div>
+                                    <% } %>
+                                <% } %>
+                            </td>
+                            
+                            <td class="text-center">
+                                <div class="score-circle <%= scoreClass %>">
+                                    <%= report.seo_score %>
+                                </div>
+                            </td>
+                            
+                            <td>
+                                <% if (isFailed) { %>
+                                    <div class="text-muted text-center">
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        <div class="small">N/A - Crawl Failed</div>
+                                    </div>
+                                <% } else { %>
+                                    <div class="metric-item">
+                                        <i class="fas fa-heading text-primary"></i>
+                                        Title: <%= titleLength %>/60 chars
+                                        <% if (titleLength < 30 || titleLength > 60) { %>
+                                            <i class="fas fa-exclamation-triangle text-warning ms-1"></i>
+                                        <% } else { %>
+                                            <i class="fas fa-check text-success ms-1"></i>
+                                        <% } %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-align-left text-info"></i>
+                                        Meta: <%= descLength %>/160 chars
+                                        <% if (descLength < 120 || descLength > 160) { %>
+                                            <i class="fas fa-exclamation-triangle text-warning ms-1"></i>
+                                        <% } else { %>
+                                            <i class="fas fa-check text-success ms-1"></i>
+                                        <% } %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-hashtag text-secondary"></i>
+                                        H1 Tags: <%= h1Count %>
+                                        <% if (h1Count !== 1) { %>
+                                            <i class="fas fa-exclamation-triangle text-warning ms-1"></i>
+                                        <% } else { %>
+                                            <i class="fas fa-check text-success ms-1"></i>
+                                        <% } %>
+                                    </div>
+                                <% } %>
+                            </td>
+                            
+                            <td>
+                                <% if (isFailed) { %>
+                                    <div class="text-muted text-center">
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        <div class="small">N/A - Crawl Failed</div>
+                                    </div>
+                                <% } else { %>
+                                    <div class="metric-item">
+                                        <i class="fas fa-file-alt text-primary"></i>
+                                        Words: <%= data.content ? (data.content.wordCount || 0) : 0 %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-list text-info"></i>
+                                        Headings: <%= data.headings ? Object.values(data.headings).flat().length : 0 %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-chart-line text-success"></i>
+                                        Density: <%= data.content ? (data.content.keywordDensity || 0) : 0 %>%
+                                    </div>
+                                <% } %>
+                            </td>
+                            
+                            <td>
+                                <% if (isFailed) { %>
+                                    <div class="text-muted text-center">
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        <div class="small">N/A - Crawl Failed</div>
+                                    </div>
+                                <% } else { %>
+                                    <div class="metric-item">
+                                        <i class="fas fa-images text-primary"></i>
+                                        Total: <%= imageCount %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-eye-slash text-danger"></i>
+                                        Missing Alt: <%= missingAlt %>
+                                        <% if (missingAlt > 0) { %>
+                                            <i class="fas fa-exclamation-triangle text-warning ms-1"></i>
+                                        <% } else { %>
+                                            <i class="fas fa-check text-success ms-1"></i>
+                                        <% } %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-percentage text-info"></i>
+                                        Optimized: <%= Math.round((imageCount - missingAlt) / Math.max(imageCount, 1) * 100) %>%
+                                    </div>
+                                <% } %>
+                            </td>
+                            
+                            <td>
+                                <% if (isFailed) { %>
+                                    <div class="text-muted text-center">
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        <div class="small">N/A - Crawl Failed</div>
+                                    </div>
+                                <% } else { %>
+                                    <div class="metric-item">
+                                        <i class="fas fa-link text-primary"></i>
+                                        Total: <%= linkCount %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-home text-success"></i>
+                                        Internal: <%= internalLinks %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-external-link-alt text-info"></i>
+                                        External: <%= externalLinks %>
+                                    </div>
+                                <% } %>
+                            </td>
+                            
+                            <td>
+                                <% if (isFailed) { %>
+                                    <div class="text-muted text-center">
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        <div class="small">N/A - Crawl Failed</div>
+                                    </div>
+                                <% } else { %>
+                                    <div class="metric-item">
+                                        <i class="fas fa-code text-primary"></i>
+                                        Found: <%= schemaCount %>
+                                        <% if (schemaCount === 0) { %>
+                                            <i class="fas fa-exclamation-triangle text-warning ms-1"></i>
+                                        <% } else { %>
+                                            <i class="fas fa-check text-success ms-1"></i>
+                                        <% } %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-sitemap text-info"></i>
+                                        Types: <%= Array.isArray(data.schema) ? [...new Set(data.schema.map(s => s.type))].length : 0 %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        Valid: <%= Array.isArray(data.schema) ? data.schema.filter(s => s.isValid).length : 0 %>
+                                    </div>
+                                <% } %>
+                            </td>
+                            
+                            <td>
+                                <% if (isFailed) { %>
+                                    <div class="text-muted text-center">
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                        <div class="small">N/A - Crawl Failed</div>
+                                    </div>
+                                <% } else { %>
+                                    <div class="metric-item">
+                                        <i class="fas fa-mobile text-primary"></i>
+                                        Score: <%= pwaScore %>%
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-file-code text-info"></i>
+                                        Manifest: 
+                                        <% if (data.pwa && data.pwa.hasManifest) { %>
+                                            <i class="fas fa-check text-success"></i>
+                                        <% } else { %>
+                                            <i class="fas fa-times text-danger"></i>
+                                        <% } %>
+                                    </div>
+                                    <div class="metric-item">
+                                        <i class="fas fa-cogs text-secondary"></i>
+                                        SW: 
+                                        <% if (data.pwa && data.pwa.hasServiceWorker) { %>
+                                            <i class="fas fa-check text-success"></i>
+                                        <% } else { %>
+                                            <i class="fas fa-times text-danger"></i>
+                                        <% } %>
+                                    </div>
+                                <% } %>
+                            </td>
+                            
+                            <td class="text-center">
+                                <% if (isFailed) { %>
+                                    <span class="badge bg-danger">Crawl Failed</span>
+                                <% } else if (totalIssues > 0) { %>
+                                    <span class="issue-count"><%= totalIssues %></span>
+                                <% } else { %>
+                                    <i class="fas fa-check-circle text-success"></i>
+                                <% } %>
+                            </td>
+                            
+                            <td class="text-muted small">
+                                <%= new Date(report.created_at).toLocaleDateString() %>
+                                <br>
+                                <%= new Date(report.created_at).toLocaleTimeString() %>
+                            </td>
+                            
+                            <td>
+                                <div class="btn-group-vertical btn-group-sm">
+                                    <% if (isFailed) { %>
+                                        <a href="/report/<%= report.id %>" class="btn btn-outline-secondary btn-sm" title="View Failed Crawl Details">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </a>
+                                    <% } else { %>
+                                        <a href="/report/<%= report.id %>" class="btn btn-outline-primary btn-sm" title="View SEO Report">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    <% } %>
+                                    
+                                    <% if (report.total_crawls && report.total_crawls > 1) { %>
+                                        <a href="/url-history?url=<%= encodeURIComponent(report.url) %>" class="btn btn-outline-info btn-sm" title="View Version History">
+                                            <i class="fas fa-history"></i>
+                                        </a>
+                                    <% } %>
+                                    
+                                    <button class="btn btn-outline-danger btn-sm" onclick="deleteReport(<%= report.id %>)" title="Delete Report">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <% if (reports.length === 0) { %>
+        <div class="text-center py-5">
+            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">No reports found</h4>
+            <p class="text-muted">Start by analyzing your first website!</p>
+            <a href="/" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create First Report
+            </a>
+        </div>
+        <% } %>
+    </main>
+
+    <!-- Bulk Delete Confirmation Modal -->
+    <div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="bulkDeleteModalLabel">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Delete All Data - WARNING
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger" role="alert">
+                        <h5><i class="fas fa-skull-crossbones me-2"></i>DANGER - IRREVERSIBLE ACTION</h5>
+                        <p class="mb-0">This will permanently delete <strong>ALL</strong> data from the system including:</p>
+                    </div>
+                    
+                    <ul class="list-group list-group-flush mb-4">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><i class="fas fa-file-alt text-primary me-2"></i>All SEO Reports</span>
+                            <span class="badge bg-secondary" id="reportsCount">-</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><i class="fas fa-code-branch text-info me-2"></i>All URL Versions</span>
+                            <span class="badge bg-secondary" id="versionsCount">-</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><i class="fas fa-link text-success me-2"></i>All URL Masters</span>
+                            <span class="badge bg-secondary" id="mastersCount">-</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><i class="fas fa-tasks text-warning me-2"></i>All Job Batches</span>
+                            <span class="badge bg-secondary" id="batchesCount">-</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><i class="fas fa-list text-dark me-2"></i>All Queue Jobs</span>
+                            <span class="badge bg-secondary" id="queueCount">-</span>
+                        </li>
+                    </ul>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-shield-alt me-2"></i>Safety Confirmation Required</h6>
+                        <p class="mb-3">To proceed, you must type the exact phrase below:</p>
+                        <div class="mb-3">
+                            <label for="confirmationText" class="form-label">Type: <code>DELETE ALL DATA</code></label>
+                            <input type="text" class="form-control" id="confirmationText" placeholder="Type the exact phrase..." autocomplete="off">
+                        </div>
+                        <small class="text-muted">This confirmation ensures you understand the consequences of this action.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled onclick="performBulkDelete()">
+                        <i class="fas fa-trash-alt me-2"></i>Delete All Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Bulk delete functionality
+        let bulkDeleteModal;
+        
+        function showBulkDeleteModal() {
+            bulkDeleteModal = new bootstrap.Modal(document.getElementById('bulkDeleteModal'));
+            
+            // Load current data counts
+            loadDataCounts();
+            
+            // Reset confirmation input
+            document.getElementById('confirmationText').value = '';
+            document.getElementById('confirmDeleteBtn').disabled = true;
+            
+            bulkDeleteModal.show();
+        }
+        
+        async function loadDataCounts() {
+            try {
+                const response = await fetch('/api/data-counts');
+                const counts = await response.json();
+                
+                document.getElementById('reportsCount').textContent = counts.reports || 0;
+                document.getElementById('versionsCount').textContent = counts.versions || 0;
+                document.getElementById('mastersCount').textContent = counts.masters || 0;
+                document.getElementById('batchesCount').textContent = counts.batches || 0;
+                document.getElementById('queueCount').textContent = counts.queue || 0;
+            } catch (error) {
+                console.error('Failed to load data counts:', error);
+                // Set fallback values
+                document.getElementById('reportsCount').textContent = '?';
+                document.getElementById('versionsCount').textContent = '?';
+                document.getElementById('mastersCount').textContent = '?';
+                document.getElementById('batchesCount').textContent = '?';
+                document.getElementById('queueCount').textContent = '?';
+            }
+        }
+        
+        async function performBulkDelete() {
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            const originalText = confirmBtn.innerHTML;
+            
+            try {
+                // Show loading state
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+                
+                const confirmText = document.getElementById('confirmationText').value;
+                
+                const response = await fetch('/api/bulk-delete-all', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ confirmText })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Close modal
+                    bulkDeleteModal.hide();
+                    
+                    // Show success message
+                    showToast(`Successfully deleted: ${result.deletedCounts.reports} reports, ${result.deletedCounts.urlVersions} versions, ${result.deletedCounts.urlMasters} URLs, ${result.deletedCounts.jobBatches} batches, ${result.deletedCounts.jobQueue} jobs`, 'success');
+                    
+                    // Reload page after short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    throw new Error(result.error || 'Delete failed');
+                }
+                
+            } catch (error) {
+                console.error('Bulk delete error:', error);
+                showToast('Failed to delete data: ' + error.message, 'error');
+                
+                // Restore button
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = originalText;
+            }
+        }
+        
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} position-fixed`;
+            toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 350px; max-width: 500px;';
+            toast.innerHTML = `
+                <div class="d-flex align-items-start">
+                    <span class="flex-grow-1">${message}</span>
+                    <button type="button" class="btn-close ms-2" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+        
+        // Enable/disable delete button based on confirmation text
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmationInput = document.getElementById('confirmationText');
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            
+            if (confirmationInput && confirmBtn) {
+                confirmationInput.addEventListener('input', function() {
+                    confirmBtn.disabled = this.value !== 'DELETE ALL DATA';
+                });
+            }
+        });
+
+        // Filter functionality
+        function applyFilters() {
+            const urlFilter = document.getElementById('urlFilter').value.toLowerCase();
+            const crawlStatusFilter = document.getElementById('crawlStatusFilter').value;
+            const scoreFilter = document.getElementById('scoreFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            const limitFilter = document.getElementById('limitFilter').value;
+            
+            const rows = document.querySelectorAll('#reportsTable tbody tr');
+            let visibleCount = 0;
+            
+            rows.forEach((row, index) => {
+                let show = true;
+                
+                // URL filter
+                if (urlFilter && !row.dataset.url.includes(urlFilter) && !row.dataset.title.includes(urlFilter)) {
+                    show = false;
+                }
+                
+                // Crawl status filter
+                if (crawlStatusFilter) {
+                    const crawlStatus = row.dataset.crawlStatus;
+                    if (crawlStatus !== crawlStatusFilter) {
+                        show = false;
+                    }
+                }
+                
+                // Score filter
+                if (scoreFilter) {
+                    const score = parseInt(row.dataset.score);
+                    switch(scoreFilter) {
+                        case 'excellent': show = show && score >= 80; break;
+                        case 'good': show = show && score >= 60 && score < 80; break;
+                        case 'fair': show = show && score >= 40 && score < 60; break;
+                        case 'poor': show = show && score < 40; break;
+                    }
+                }
+                
+                // HTTP Status filter
+                if (statusFilter) {
+                    const status = row.dataset.status;
+                    if (status !== statusFilter) {
+                        show = false;
+                    }
+                }
+                
+                // Date filter
+                if (dateFilter) {
+                    const date = new Date(row.dataset.date);
+                    const now = new Date();
+                    switch(dateFilter) {
+                        case 'today':
+                            show = show && date.toDateString() === now.toDateString();
+                            break;
+                        case 'week':
+                            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                            show = show && date >= weekAgo;
+                            break;
+                        case 'month':
+                            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                            show = show && date >= monthAgo;
+                            break;
+                    }
+                }
+                
+                // Limit filter
+                if (limitFilter !== 'all' && visibleCount >= parseInt(limitFilter)) {
+                    show = false;
+                }
+                
+                if (show) visibleCount++;
+                row.style.display = show ? '' : 'none';
+            });
+            
+            document.getElementById('resultsCount').textContent = `${visibleCount} reports`;
+        }
+        
+        function clearFilters() {
+            document.getElementById('urlFilter').value = '';
+            document.getElementById('crawlStatusFilter').value = '';
+            document.getElementById('scoreFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            document.getElementById('limitFilter').value = '25';
+            applyFilters();
+        }
+        
+        // Export to CSV
+        function exportToCSV() {
+            const table = document.getElementById('reportsTable');
+            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
+            
+            const headers = ['URL', 'Status Code', 'Response Time', 'SEO Score', 'Title Length', 'Meta Length', 'H1 Count', 'Images', 'Missing Alt', 'Links', 'Schema Count', 'PWA Score', 'Issues', 'Date'];
+            
+            const csvContent = [
+                headers.join(','),
+                ...rows.map(row => {
+                    const cells = row.querySelectorAll('td');
+                    return [
+                        `"${cells[0].querySelector('a').href}"`,
+                        cells[1].querySelector('.badge').textContent.trim(),
+                        cells[1].querySelector('.response-time')?.textContent.replace('ms', '') || '0',
+                        cells[2].querySelector('.score-circle').textContent.trim(),
+                        cells[3].textContent.match(/Title: (\d+)/)?.[1] || '0',
+                        cells[3].textContent.match(/Meta: (\d+)/)?.[1] || '0',
+                        cells[3].textContent.match(/H1 Tags: (\d+)/)?.[1] || '0',
+                        cells[5].textContent.match(/Total: (\d+)/)?.[1] || '0',
+                        cells[5].textContent.match(/Missing Alt: (\d+)/)?.[1] || '0',
+                        cells[6].textContent.match(/Total: (\d+)/)?.[1] || '0',
+                        cells[7].textContent.match(/Found: (\d+)/)?.[1] || '0',
+                        cells[8].textContent.match(/Score: (\d+)/)?.[1] || '0',
+                        cells[9].querySelector('.issue-count')?.textContent || '0',
+                        `"${cells[10].textContent.trim()}"`
+                    ].join(',');
+                })
+            ].join('\n');
+            
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `seo-reports-${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        // Delete report
+        async function deleteReport(id) {
+            if (!confirm('Are you sure you want to delete this report?')) return;
+            
+            try {
+                const response = await fetch(`/api/report/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to delete report');
+                }
+            } catch (error) {
+                alert('Error deleting report');
+            }
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('urlFilter').addEventListener('input', applyFilters);
+            document.getElementById('crawlStatusFilter').addEventListener('change', applyFilters);
+            document.getElementById('scoreFilter').addEventListener('change', applyFilters);
+            document.getElementById('statusFilter').addEventListener('change', applyFilters);
+            document.getElementById('dateFilter').addEventListener('change', applyFilters);
+            document.getElementById('limitFilter').addEventListener('change', applyFilters);
+            
+            // Initialize tooltips
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Initial filter application
+            applyFilters();
+        });
+    </script>
+</body>
+</html>

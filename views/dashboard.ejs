@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Crawler - Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>SEO Crawler
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports-overview">
+                            <i class="fas fa-chart-bar me-1"></i>Reports Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/browse">
+                            <i class="fas fa-history me-1"></i>Browse Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/batches">
+                            <i class="fas fa-tasks me-1"></i>Batches
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/url-versions">
+                            <i class="fas fa-code-branch me-1"></i>URL Versions
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i><%= user.username %>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-search me-2"></i>SEO Website Analyzer
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="lead">Analyze single URLs or submit multiple URLs for bulk processing.</p>
+                        
+                        <!-- Analysis Mode Toggle -->
+                        <div class="d-flex justify-content-center mb-4">
+                            <div class="btn-group" role="group" aria-label="Analysis mode">
+                                <input type="radio" class="btn-check" name="analysisMode" id="singleMode" checked>
+                                <label class="btn btn-outline-primary" for="singleMode">
+                                    <i class="fas fa-link me-2"></i>Single URL
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="analysisMode" id="bulkMode">
+                                <label class="btn btn-outline-primary" for="bulkMode">
+                                    <i class="fas fa-list me-2"></i>Bulk URLs
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Single URL Form -->
+                        <div id="singleUrlForm">
+                            <form id="analyzeForm">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-globe"></i>
+                                    </span>
+                                    <input type="url" class="form-control form-control-lg" 
+                                           id="urlInput" 
+                                           placeholder="https://example.com" 
+                                           required>
+                                    <button class="btn btn-primary btn-lg" type="submit" id="analyzeBtn">
+                                        <i class="fas fa-search me-2"></i>Analyze
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Bulk URL Form -->
+                        <div id="bulkUrlForm" class="d-none">
+                            <form id="bulkAnalyzeForm" enctype="multipart/form-data">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-3">
+                                            <label for="batchName" class="form-label">Batch Name (Optional)</label>
+                                            <input type="text" class="form-control" id="batchName" 
+                                                   placeholder="My SEO Analysis Batch">
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="urlList" class="form-label">URLs (One per line, max 20,000)</label>
+                                            <textarea class="form-control" id="urlList" rows="8" 
+                                                      placeholder="https://example.com&#10;https://another-site.com&#10;www.site-without-protocol.com&#10;&#10;Note: Protocols (http/https) will be added automatically if missing&#10;Duplicate URLs will be automatically removed"></textarea>
+                                            <div class="form-text">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Up to 20,000 URLs supported. Protocols will be added automatically, duplicates removed.
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="csvFile" class="form-label">Or Upload CSV File</label>
+                                            <input type="file" class="form-control" id="csvFile" accept=".csv,.txt">
+                                            <div class="form-text">CSV should have URLs in the first column</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4">
+                                        <div class="card bg-light">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Batch Settings</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-3">
+                                                    <label for="concurrency" class="form-label">Concurrent Jobs</label>
+                                                    <select class="form-select" id="concurrency">
+                                                        <option value="1">1 (Slowest)</option>
+                                                        <option value="2">2</option>
+                                                        <option value="3" selected>3 (Recommended)</option>
+                                                        <option value="4">4</option>
+                                                        <option value="5">5 (Fastest)</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label for="delay" class="form-label">Delay Between Requests</label>
+                                                    <select class="form-select" id="delay">
+                                                        <option value="500">0.5 seconds</option>
+                                                        <option value="1000" selected>1 second</option>
+                                                        <option value="2000">2 seconds</option>
+                                                        <option value="5000">5 seconds</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                <div class="alert alert-info p-2">
+                                                    <small>
+                                                        <i class="fas fa-info-circle me-1"></i>
+                                                        Higher concurrency and lower delays process faster but may stress target servers.
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center">
+                                    <button class="btn btn-success btn-lg" type="submit" id="bulkAnalyzeBtn">
+                                        <i class="fas fa-rocket me-2"></i>Start Bulk Analysis
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Messages -->
+                        <div id="errorMessage" class="alert alert-danger d-none" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            <span id="errorText"></span>
+                        </div>
+                        
+                        <div id="successMessage" class="alert alert-success d-none" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span id="successText"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-tags fa-2x text-primary mb-3"></i>
+                                <h5>Meta Analysis</h5>
+                                <p class="text-muted">Title, description, keywords, and Open Graph tags</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-heading fa-2x text-success mb-3"></i>
+                                <h5>Content Structure</h5>
+                                <p class="text-muted">Heading hierarchy, content analysis, and readability</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="fas fa-link fa-2x text-info mb-3"></i>
+                                <h5>Link Analysis</h5>
+                                <p class="text-muted">Internal and external links, anchor text optimization</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-light py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2024 SEO Crawler. Built for analyzing website SEO performance.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Dashboard loaded, setting up form handlers');
+        
+        // Get form elements
+        const singleForm = document.getElementById('analyzeForm');
+        const bulkForm = document.getElementById('bulkAnalyzeForm');
+        const urlInput = document.getElementById('urlInput');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const bulkAnalyzeBtn = document.getElementById('bulkAnalyzeBtn');
+        
+        // Mode toggle elements
+        const singleMode = document.getElementById('singleMode');
+        const bulkMode = document.getElementById('bulkMode');
+        const singleUrlForm = document.getElementById('singleUrlForm');
+        const bulkUrlForm = document.getElementById('bulkUrlForm');
+        
+        // CSV file elements
+        const csvFile = document.getElementById('csvFile');
+        const urlList = document.getElementById('urlList');
+        
+        // Toggle between single and bulk modes
+        function toggleMode() {
+            if (singleMode.checked) {
+                singleUrlForm.classList.remove('d-none');
+                bulkUrlForm.classList.add('d-none');
+            } else {
+                singleUrlForm.classList.add('d-none');
+                bulkUrlForm.classList.remove('d-none');
+            }
+            hideMessages();
+        }
+        
+        singleMode.addEventListener('change', toggleMode);
+        bulkMode.addEventListener('change', toggleMode);
+        
+        // Hide messages
+        function hideMessages() {
+            errorMessage.classList.add('d-none');
+            successMessage.classList.add('d-none');
+        }
+        
+        // Show error message
+        function showError(message) {
+            hideMessages();
+            document.getElementById('errorText').textContent = message;
+            errorMessage.classList.remove('d-none');
+        }
+        
+        // Show success message
+        function showSuccess(message) {
+            hideMessages();
+            document.getElementById('successText').textContent = message;
+            successMessage.classList.remove('d-none');
+        }
+        
+        // Single URL form handler
+        if (singleForm) {
+            singleForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                console.log('Single URL form submitted');
+                
+                const url = urlInput.value.trim();
+                console.log('URL entered:', url);
+                
+                hideMessages();
+                
+                // Validate URL
+                if (!url) {
+                    showError('Please enter a URL');
+                    return;
+                }
+                
+                if (!url.match(/^https?:\/\//)) {
+                    showError('URL must start with http:// or https://');
+                    return;
+                }
+                
+                console.log('URL validation passed, redirecting...');
+                
+                // Show loading on button briefly and redirect immediately
+                analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Starting Analysis...';
+                analyzeBtn.disabled = true;
+                
+                // Redirect to analyze page
+                const redirectUrl = '/analyze?url=' + encodeURIComponent(url);
+                console.log('Redirecting to:', redirectUrl);
+                
+                window.location.href = redirectUrl;
+            });
+        }
+        
+        // CSV file upload handler
+        csvFile.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    const lines = text.split('\n');
+                    const urls = [];
+                    
+                    // Extract URLs from CSV (assume first column contains URLs)
+                    lines.forEach(line => {
+                        if (line.trim()) {
+                            const columns = line.split(',');
+                            if (columns[0]) {
+                                urls.push(columns[0].trim().replace(/['"]/g, ''));
+                            }
+                        }
+                    });
+                    
+                    // Update textarea with URLs
+                    urlList.value = urls.join('\n');
+                    showSuccess(`Loaded ${urls.length} URLs from CSV file`);
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        // Bulk URL form handler
+        if (bulkForm) {
+            bulkForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                console.log('Bulk URL form submitted');
+                
+                const batchName = document.getElementById('batchName').value.trim();
+                const urls = urlList.value.trim();
+                const concurrency = parseInt(document.getElementById('concurrency').value);
+                const delay = parseInt(document.getElementById('delay').value);
+                
+                hideMessages();
+                
+                // Validate input
+                if (!urls) {
+                    showError('Please enter URLs or upload a CSV file');
+                    return;
+                }
+                
+                // Parse URLs
+                const urlArray = urls.split('\n').filter(url => url.trim());
+                if (urlArray.length === 0) {
+                    showError('No valid URLs found');
+                    return;
+                }
+                
+                if (urlArray.length > 20000) {
+                    showError('Maximum 20,000 URLs allowed per batch');
+                    return;
+                }
+                
+                // Show loading
+                bulkAnalyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Submitting Batch...';
+                bulkAnalyzeBtn.disabled = true;
+                
+                try {
+                    // Submit bulk analysis
+                    const response = await fetch('/api/bulk-submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            batchName: batchName || null,
+                            urls: urlArray,
+                            options: {
+                                concurrency: concurrency,
+                                delay_ms: delay
+                            }
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok) {
+                        let message = result.message;
+                        if (result.validationSummary && (result.validationSummary.duplicates > 0 || result.validationSummary.invalid > 0)) {
+                            message += ` Note: ${result.validationSummary.duplicates} duplicates removed, ${result.validationSummary.invalid} invalid URLs skipped.`;
+                        }
+                        showSuccess(message);
+                        
+                        // Reset form
+                        bulkForm.reset();
+                        
+                        // Redirect to batch monitor after a delay
+                        setTimeout(() => {
+                            window.location.href = `/batch/${result.batchId}`;
+                        }, 3000);
+                        
+                    } else {
+                        showError(result.error || 'Failed to submit batch');
+                    }
+                    
+                } catch (error) {
+                    console.error('Bulk submission error:', error);
+                    showError('Network error. Please try again.');
+                } finally {
+                    // Reset button
+                    bulkAnalyzeBtn.innerHTML = '<i class="fas fa-rocket me-2"></i>Start Bulk Analysis';
+                    bulkAnalyzeBtn.disabled = false;
+                }
+            });
+        }
+        
+        console.log('Form handlers set up successfully');
+    });
+    </script>
+</body>
+</html>

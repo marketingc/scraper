@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Crawler - Batches Overview</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .batch-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .batch-card:hover {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .batch-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px 10px 0 0;
+            padding: 15px 20px;
+        }
+        
+        .batch-status-badge {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+        }
+        
+        .progress-mini {
+            height: 6px;
+            border-radius: 3px;
+        }
+        
+        .batch-stats {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            padding: 15px 0;
+            border-top: 1px solid #dee2e6;
+            margin-top: 15px;
+        }
+        
+        .stat-mini {
+            flex: 1;
+        }
+        
+        .stat-mini .number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-mini .label {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+        
+        .batch-actions {
+            padding: 15px 20px;
+        }
+        
+        .batch-meta {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+        
+        .filter-controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .quick-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .quick-stat-item {
+            text-align: center;
+        }
+        
+        .quick-stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .quick-stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>SEO Crawler
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports-overview">
+                            <i class="fas fa-chart-bar me-1"></i>Reports Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/browse">
+                            <i class="fas fa-history me-1"></i>Browse Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/batches">
+                            <i class="fas fa-tasks me-1"></i>Batches
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/url-versions">
+                            <i class="fas fa-code-branch me-1"></i>URL Versions
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i><%= user.username %>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2><i class="fas fa-tasks me-2"></i>Batch Analysis Overview</h2>
+                    <a href="/" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Batch
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <% if (batches.length > 0) { %>
+        <!-- Quick Statistics -->
+        <div class="quick-stats">
+            <div class="row">
+                <div class="col-md-3 quick-stat-item">
+                    <span class="quick-stat-number"><%= batches.length %></span>
+                    <span class="quick-stat-label">Total Batches</span>
+                </div>
+                <div class="col-md-3 quick-stat-item">
+                    <span class="quick-stat-number"><%= batches.filter(b => b.status === 'running').length %></span>
+                    <span class="quick-stat-label">Running</span>
+                </div>
+                <div class="col-md-3 quick-stat-item">
+                    <span class="quick-stat-number"><%= batches.filter(b => b.status === 'completed').length %></span>
+                    <span class="quick-stat-label">Completed</span>
+                </div>
+                <div class="col-md-3 quick-stat-item">
+                    <span class="quick-stat-number"><%= batches.reduce((sum, b) => sum + b.total_urls, 0) %></span>
+                    <span class="quick-stat-label">Total URLs</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="filter-controls">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <label class="form-label">Filter by Status:</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="running">Running</option>
+                        <option value="completed">Completed</option>
+                        <option value="failed">Failed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Search Batches:</label>
+                    <input type="text" class="form-control" id="searchFilter" placeholder="Search by name...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Sort by:</label>
+                    <select class="form-select" id="sortFilter">
+                        <option value="created_at">Newest First</option>
+                        <option value="created_at_asc">Oldest First</option>
+                        <option value="name">Name A-Z</option>
+                        <option value="total_urls">Most URLs</option>
+                        <option value="status">Status</option>
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <label class="form-label d-block">&nbsp;</label>
+                    <button class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times me-1"></i>Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batches Grid -->
+        <div class="row" id="batchesGrid">
+            <% batches.forEach(batch => { 
+                const progress = batch.total_urls > 0 ? Math.round(((batch.completed_urls || 0) + (batch.failed_urls || 0)) / batch.total_urls * 100) : 0;
+                const statusColor = {
+                    'pending': 'secondary',
+                    'running': 'primary', 
+                    'completed': 'success',
+                    'failed': 'danger',
+                    'cancelled': 'warning'
+                }[batch.status] || 'secondary';
+            %>
+            <div class="col-md-6 col-lg-4 batch-item" 
+                 data-status="<%= batch.status %>" 
+                 data-name="<%= (batch.name || '').toLowerCase() %>"
+                 data-created="<%= batch.created_at %>"
+                 data-urls="<%= batch.total_urls %>">
+                <div class="batch-card">
+                    <div class="batch-header">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1"><%= batch.name || `Batch #${batch.id}` %></h6>
+                                <small class="opacity-75">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    <%= new Date(batch.created_at).toLocaleDateString() %>
+                                </small>
+                            </div>
+                            <span class="badge bg-<%= statusColor %> batch-status-badge">
+                                <%= batch.status.toUpperCase() %>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="batch-meta">
+                            <i class="fas fa-link me-1"></i><%= batch.total_urls %> URLs
+                            <span class="ms-3">
+                                <i class="fas fa-user me-1"></i><%= batch.created_by_name %>
+                            </span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-muted">Progress</small>
+                                <small class="fw-bold"><%= progress %>%</small>
+                            </div>
+                            <div class="progress progress-mini">
+                                <div class="progress-bar bg-success" style="width: <%= progress %>%"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="batch-stats">
+                            <div class="stat-mini text-success">
+                                <span class="number"><%= batch.completed_urls || 0 %></span>
+                                <span class="label">Completed</span>
+                            </div>
+                            <div class="stat-mini text-danger">
+                                <span class="number"><%= batch.failed_urls || 0 %></span>
+                                <span class="label">Failed</span>
+                            </div>
+                            <div class="stat-mini text-warning">
+                                <span class="number"><%= batch.total_urls - (batch.completed_urls || 0) - (batch.failed_urls || 0) %></span>
+                                <span class="label">Pending</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="batch-actions">
+                        <div class="btn-group w-100" role="group">
+                            <a href="/batch/<%= batch.id %>" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye me-1"></i>Monitor
+                            </a>
+                            <% if (batch.status === 'running') { %>
+                            <button class="btn btn-outline-warning btn-sm" onclick="cancelBatch(<%= batch.id %>)">
+                                <i class="fas fa-stop me-1"></i>Cancel
+                            </button>
+                            <% } else if (batch.status === 'failed' || (batch.failed_urls > 0)) { %>
+                            <button class="btn btn-outline-info btn-sm" onclick="retryBatch(<%= batch.id %>)">
+                                <i class="fas fa-redo me-1"></i>Retry
+                            </button>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+        <% } else { %>
+        <!-- Empty State -->
+        <div class="empty-state">
+            <i class="fas fa-tasks"></i>
+            <h4>No Batches Yet</h4>
+            <p>You haven't created any batch analyses yet. Start by submitting multiple URLs for bulk processing.</p>
+            <a href="/" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>Create First Batch
+            </a>
+        </div>
+        <% } %>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setupFilters();
+            
+            // Auto-refresh every 30 seconds for running batches
+            setInterval(refreshRunningBatches, 30000);
+        });
+        
+        function setupFilters() {
+            const statusFilter = document.getElementById('statusFilter');
+            const searchFilter = document.getElementById('searchFilter');
+            const sortFilter = document.getElementById('sortFilter');
+            
+            if (statusFilter) statusFilter.addEventListener('change', applyFilters);
+            if (searchFilter) searchFilter.addEventListener('input', applyFilters);
+            if (sortFilter) sortFilter.addEventListener('change', applyFilters);
+        }
+        
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+            const searchFilter = document.getElementById('searchFilter')?.value.toLowerCase() || '';
+            const sortFilter = document.getElementById('sortFilter')?.value || 'created_at';
+            
+            const batchItems = Array.from(document.querySelectorAll('.batch-item'));
+            
+            // Filter items
+            const filteredItems = batchItems.filter(item => {
+                const matchesStatus = !statusFilter || item.dataset.status === statusFilter;
+                const matchesSearch = !searchFilter || item.dataset.name.includes(searchFilter);
+                return matchesStatus && matchesSearch;
+            });
+            
+            // Sort items
+            filteredItems.sort((a, b) => {
+                switch (sortFilter) {
+                    case 'created_at':
+                        return new Date(b.dataset.created) - new Date(a.dataset.created);
+                    case 'created_at_asc':
+                        return new Date(a.dataset.created) - new Date(b.dataset.created);
+                    case 'name':
+                        return a.dataset.name.localeCompare(b.dataset.name);
+                    case 'total_urls':
+                        return parseInt(b.dataset.urls) - parseInt(a.dataset.urls);
+                    case 'status':
+                        return a.dataset.status.localeCompare(b.dataset.status);
+                    default:
+                        return 0;
+                }
+            });
+            
+            // Hide all items first
+            batchItems.forEach(item => item.style.display = 'none');
+            
+            // Show filtered and sorted items
+            const grid = document.getElementById('batchesGrid');
+            filteredItems.forEach(item => {
+                item.style.display = 'block';
+                grid.appendChild(item); // Re-append to maintain sort order
+            });
+        }
+        
+        function clearFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('searchFilter').value = '';
+            document.getElementById('sortFilter').value = 'created_at';
+            applyFilters();
+        }
+        
+        async function cancelBatch(batchId) {
+            if (!confirm('Are you sure you want to cancel this batch?')) return;
+            
+            try {
+                const response = await fetch(`/api/batch/${batchId}/cancel`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    alert('Batch cancelled successfully');
+                    location.reload();
+                } else {
+                    const data = await response.json();
+                    alert('Failed to cancel batch: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error cancelling batch: ' + error.message);
+            }
+        }
+        
+        async function retryBatch(batchId) {
+            if (!confirm('Retry all failed jobs in this batch?')) return;
+            
+            try {
+                const response = await fetch(`/api/batch/${batchId}/retry`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    const data = await response.json();
+                    alert('Failed to retry batch: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error retrying batch: ' + error.message);
+            }
+        }
+        
+        function refreshRunningBatches() {
+            const runningBatches = document.querySelectorAll('.batch-item[data-status="running"]');
+            if (runningBatches.length > 0) {
+                console.log('Refreshing page for running batches...');
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>

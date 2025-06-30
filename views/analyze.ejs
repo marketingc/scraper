@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Crawler - Analyzing...</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .progress-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .step {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #6c757d;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active {
+            background: #e3f2fd;
+            border-left-color: #2196f3;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+        }
+        
+        .step.completed {
+            background: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+        
+        .step.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+        
+        .step-icon {
+            width: 24px;
+            text-align: center;
+            margin-right: 10px;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .step-description {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin: 0;
+        }
+        
+        .loading-animation {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .completion-screen {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .completion-icon {
+            font-size: 4rem;
+            color: #4caf50;
+            margin-bottom: 20px;
+            animation: bounce 1s ease-in-out;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        
+        .url-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>SEO Crawler
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">
+                    <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                </a>
+                <a class="nav-link" href="/reports-overview">
+                    <i class="fas fa-chart-bar me-1"></i>Reports Overview
+                </a>
+                <a class="nav-link" href="/browse">
+                    <i class="fas fa-history me-1"></i>Browse Reports
+                </a>
+                <a class="nav-link" href="/batches">
+                    <i class="fas fa-tasks me-1"></i>Batches
+                </a>
+                <a class="nav-link" href="/url-versions">
+                    <i class="fas fa-code-branch me-1"></i>URL Versions
+                </a>
+                <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user me-1"></i><%= user.username %>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="/logout">
+                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-5">
+        <div class="progress-container">
+            <div class="text-center mb-4">
+                <h2><i class="fas fa-cog loading-animation me-2"></i>Analyzing Website</h2>
+                <div class="url-display">
+                    <strong>URL:</strong> <span id="targetUrl"><%= url %></span>
+                </div>
+            </div>
+
+            <!-- Progress Steps -->
+            <div id="progressSteps">
+                <div class="step" id="step-init">
+                    <div class="d-flex align-items-center">
+                        <div class="step-icon">
+                            <i class="fas fa-play-circle text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="step-title">Initializing Analysis</div>
+                            <div class="step-description">Preparing to analyze the website...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step" id="step-fetch">
+                    <div class="d-flex align-items-center">
+                        <div class="step-icon">
+                            <i class="fas fa-download text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="step-title">Fetching Website Content</div>
+                            <div class="step-description">Downloading HTML and analyzing server response...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step" id="step-meta">
+                    <div class="d-flex align-items-center">
+                        <div class="step-icon">
+                            <i class="fas fa-tags text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="step-title">Analyzing Meta Data</div>
+                            <div class="step-description">Extracting title, description, keywords, and Open Graph tags...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step" id="step-structure">
+                    <div class="d-flex align-items-center">
+                        <div class="step-icon">
+                            <i class="fas fa-heading text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="step-title">Analyzing Content Structure</div>
+                            <div class="step-description">Examining headings, content, and page structure...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step" id="step-images">
+                    <div class="d-flex align-items-center">
+                        <div class="step-icon">
+                            <i class="fas fa-images text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="step-title">Analyzing Images</div>
+                            <div class="step-description">Checking alt tags, image optimization, and accessibility...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step" id="step-links">
+                    <div class="d-flex align-items-center">
+                        <div class="step-icon">
+                            <i class="fas fa-link text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="step-title">Analyzing Links</div>
+                            <div class="step-description">Examining internal and external links...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step" id="step-report">
+                    <div class="d-flex align-items-center">
+                        <div class="step-icon">
+                            <i class="fas fa-chart-line text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="step-title">Generating Report</div>
+                            <div class="step-description">Creating SEO score and recommendations...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step" id="step-save">
+                    <div class="d-flex align-items-center">
+                        <div class="step-icon">
+                            <i class="fas fa-save text-muted"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="step-title">Saving Results</div>
+                            <div class="step-description">Storing analysis results to database...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completion Screen -->
+            <div class="completion-screen" id="completionScreen">
+                <div class="completion-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 class="mb-3">Analysis Complete!</h3>
+                <p class="text-muted mb-4">Your SEO analysis has been completed successfully.</p>
+                <div class="mb-4">
+                    <span class="badge bg-success fs-6 p-3">
+                        <i class="fas fa-chart-line me-2"></i>
+                        SEO Score: <span id="finalScore">--</span>/100
+                    </span>
+                </div>
+                <div class="d-grid gap-2 d-md-block">
+                    <button class="btn btn-primary btn-lg" id="viewReportBtn">
+                        <i class="fas fa-eye me-2"></i>View Detailed Report
+                    </button>
+                    <a href="/" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-plus me-2"></i>Analyze Another URL
+                    </a>
+                </div>
+            </div>
+
+            <!-- Error Screen -->
+            <div class="text-center d-none" id="errorScreen">
+                <div class="text-danger mb-3" style="font-size: 4rem;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3 class="mb-3">Analysis Failed</h3>
+                <p class="text-muted mb-4" id="errorMessage">Something went wrong during the analysis.</p>
+                <div class="d-grid gap-2 d-md-block">
+                    <button class="btn btn-warning" onclick="retryAnalysis()">
+                        <i class="fas fa-redo me-2"></i>Try Again
+                    </button>
+                    <a href="/" class="btn btn-outline-secondary">
+                        <i class="fas fa-home me-2"></i>Go Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentReportId = null;
+        let analysisStartTime = Date.now();
+        
+        const steps = [
+            'step-init',
+            'step-fetch', 
+            'step-meta',
+            'step-structure',
+            'step-images',
+            'step-links',
+            'step-report',
+            'step-save'
+        ];
+        
+        let currentStepIndex = 0;
+        
+        function updateStep(stepId, status, description = null) {
+            const step = document.getElementById(stepId);
+            if (!step) {
+                console.error('Step not found:', stepId);
+                return;
+            }
+            
+            const icon = step.querySelector('.step-icon i');
+            const desc = step.querySelector('.step-description');
+            
+            console.log('Updating step:', stepId, 'to status:', status);
+            
+            // Remove all status classes
+            step.classList.remove('active', 'completed', 'error');
+            
+            switch(status) {
+                case 'active':
+                    step.classList.add('active');
+                    icon.className = 'fas fa-spinner fa-spin text-primary';
+                    if (description) desc.textContent = description;
+                    break;
+                case 'completed':
+                    step.classList.add('completed');
+                    icon.className = 'fas fa-check-circle text-success';
+                    break;
+                case 'error':
+                    step.classList.add('error');
+                    icon.className = 'fas fa-times-circle text-danger';
+                    if (description) desc.textContent = description;
+                    break;
+            }
+            
+            // Scroll the step into view
+            step.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        function nextStep() {
+            console.log('NextStep called, currentStepIndex:', currentStepIndex);
+            
+            if (currentStepIndex > 0) {
+                console.log('Marking previous step as completed:', steps[currentStepIndex - 1]);
+                updateStep(steps[currentStepIndex - 1], 'completed');
+            }
+            
+            if (currentStepIndex < steps.length) {
+                console.log('Marking current step as active:', steps[currentStepIndex]);
+                updateStep(steps[currentStepIndex], 'active');
+                currentStepIndex++;
+            } else {
+                console.log('All steps completed');
+            }
+        }
+        
+        function showError(message) {
+            document.getElementById('progressSteps').style.display = 'none';
+            document.getElementById('errorScreen').classList.remove('d-none');
+            document.getElementById('errorMessage').textContent = message;
+        }
+        
+        function showCompletion(score, reportId) {
+            // Mark final step as completed
+            if (currentStepIndex > 0) {
+                updateStep(steps[currentStepIndex - 1], 'completed');
+            }
+            
+            document.getElementById('progressSteps').style.display = 'none';
+            document.getElementById('completionScreen').style.display = 'block';
+            document.getElementById('finalScore').textContent = score;
+            currentReportId = reportId;
+            
+            document.getElementById('viewReportBtn').onclick = function() {
+                window.location.href = '/report/' + reportId;
+            };
+        }
+        
+        function retryAnalysis() {
+            window.location.href = '/analyze?url=' + encodeURIComponent('<%= url %>');
+        }
+        
+        async function startAnalysis() {
+            try {
+                // Start step progression immediately
+                nextStep(); // Initialize
+                
+                // Start the backend analysis
+                const analysisPromise = fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: '<%= url %>' })
+                });
+                
+                // Progress through steps with realistic timing
+                const stepTimings = [1000, 1500, 2000, 2500, 3000, 3500, 4000]; // milliseconds
+                
+                for (let i = 0; i < stepTimings.length; i++) {
+                    await new Promise(resolve => setTimeout(resolve, stepTimings[i] - (i > 0 ? stepTimings[i-1] : 0)));
+                    nextStep();
+                }
+                
+                // Wait for backend to complete
+                const response = await analysisPromise;
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Ensure we've shown all steps before completion
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    showCompletion(result.report.summary.seoScore, result.reportId);
+                } else {
+                    throw new Error(result.error || 'Analysis failed');
+                }
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                // Mark current step as error
+                if (currentStepIndex > 0 && currentStepIndex <= steps.length) {
+                    updateStep(steps[currentStepIndex - 1], 'error', 'Failed: ' + error.message);
+                }
+                setTimeout(() => showError(error.message), 1000);
+            }
+        }
+        
+        // Start analysis when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            startAnalysis();
+        });
+    </script>
+</body>
+</html>

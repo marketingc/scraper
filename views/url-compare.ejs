@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Crawler - Version Comparison</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .comparison-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .version-column {
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .version-left {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+        
+        .version-right {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+        }
+        
+        .score-display {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 1.5rem;
+            margin: 0 auto;
+        }
+        
+        .score-excellent { background: #28a745; }
+        .score-good { background: #ffc107; color: #000; }
+        .score-fair { background: #fd7e14; }
+        .score-poor { background: #dc3545; }
+        
+        .change-indicator {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .change-improved {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .change-degraded {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .change-same {
+            background: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
+        }
+        
+        .comparison-table th {
+            background: #343a40;
+            color: white;
+            border: none;
+        }
+        
+        .field-changed {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        
+        .field-same {
+            background: #f8f9fa;
+        }
+        
+        .diff-highlight {
+            background: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .meta-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .recommendations-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .recommendation-item {
+            border-left: 4px solid #dee2e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        
+        .recommendation-high { border-left-color: #dc3545; background: #fff5f5; }
+        .recommendation-medium { border-left-color: #ffc107; background: #fffbf0; }
+        .recommendation-low { border-left-color: #28a745; background: #f0fff4; }
+        
+        .navbar-version {
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            padding: 5px 10px;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>SEO Crawler
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports-overview">
+                            <i class="fas fa-chart-bar me-1"></i>Reports Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/browse">
+                            <i class="fas fa-history me-1"></i>Browse Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/batches">
+                            <i class="fas fa-tasks me-1"></i>Batches
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/url-versions">
+                            <i class="fas fa-code-branch me-1"></i>URL Versions
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i><%= user.username %>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        <!-- Header -->
+        <div class="comparison-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-2">
+                        <i class="fas fa-exchange-alt me-2"></i>Version Comparison
+                    </h2>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-external-link-alt me-2"></i>
+                        <a href="<%= url %>" target="_blank" class="text-white text-decoration-none">
+                            <%= url %>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex justify-content-end align-items-center">
+                        <span class="navbar-version">v<%= version1.version_number %></span>
+                        <i class="fas fa-arrows-alt-h mx-2"></i>
+                        <span class="navbar-version">v<%= version2.version_number %></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/url-versions">URL Versions</a></li>
+                        <li class="breadcrumb-item"><a href="/url-history?url=<%= encodeURIComponent(url) %>">History</a></li>
+                        <li class="breadcrumb-item active">Compare</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Score Comparison -->
+        <div class="meta-card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>SEO Score Comparison
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-5">
+                        <h6>Version <%= version1.version_number %></h6>
+                        <div class="score-display <%= version1.seo_score >= 80 ? 'score-excellent' : version1.seo_score >= 60 ? 'score-good' : version1.seo_score >= 40 ? 'score-fair' : 'score-poor' %>">
+                            <%= version1.seo_score %>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <%= new Date(version1.created_at).toLocaleDateString() %>
+                        </small>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-center justify-content-center">
+                        <div class="change-indicator <%= version2.seo_score > version1.seo_score ? 'change-improved' : version2.seo_score < version1.seo_score ? 'change-degraded' : 'change-same' %>">
+                            <% const scoreDiff = version2.seo_score - version1.seo_score; %>
+                            <% if (scoreDiff > 0) { %>
+                                <i class="fas fa-arrow-up"></i> +<%= scoreDiff %>
+                            <% } else if (scoreDiff < 0) { %>
+                                <i class="fas fa-arrow-down"></i> <%= scoreDiff %>
+                            <% } else { %>
+                                <i class="fas fa-minus"></i> No change
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <h6>Version <%= version2.version_number %></h6>
+                        <div class="score-display <%= version2.seo_score >= 80 ? 'score-excellent' : version2.seo_score >= 60 ? 'score-good' : version2.seo_score >= 40 ? 'score-fair' : 'score-poor' %>">
+                            <%= version2.seo_score %>
+                        </div>
+                        <small class="text-muted d-block mt-2">
+                            <%= new Date(version2.created_at).toLocaleDateString() %>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Comparison -->
+        <div class="meta-card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-alt me-2"></i>Content Comparison
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table comparison-table">
+                    <thead>
+                        <tr>
+                            <th width="200">Field</th>
+                            <th>Version <%= version1.version_number %></th>
+                            <th>Version <%= version2.version_number %></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="<%= version1.title !== version2.title ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Title</strong></td>
+                            <td><%= version1.title || 'No title' %></td>
+                            <td><%= version2.title || 'No title' %></td>
+                        </tr>
+                        <tr class="<%= version1.description !== version2.description ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Description</strong></td>
+                            <td><%= version1.description || 'No description' %></td>
+                            <td><%= version2.description || 'No description' %></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Title Length</strong></td>
+                            <td><%= version1.analysis_data.meta?.titleLength || 'N/A' %></td>
+                            <td><%= version2.analysis_data.meta?.titleLength || 'N/A' %></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Description Length</strong></td>
+                            <td><%= version1.analysis_data.meta?.descriptionLength || 'N/A' %></td>
+                            <td><%= version2.analysis_data.meta?.descriptionLength || 'N/A' %></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status Code</strong></td>
+                            <td><%= version1.analysis_data.statusCode || 'N/A' %></td>
+                            <td><%= version2.analysis_data.statusCode || 'N/A' %></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Response Time</strong></td>
+                            <td>
+                                <% const responseTime1 = version1.analysis_data.statusInfo?.responseTime; %>
+                                <% if (responseTime1) { %>
+                                    <%= responseTime1 %>ms
+                                    <span class="badge <%= responseTime1 < 1000 ? 'bg-success' : responseTime1 < 3000 ? 'bg-warning' : 'bg-danger' %> ms-1">
+                                        <%= responseTime1 < 1000 ? 'Fast' : responseTime1 < 3000 ? 'Slow' : 'Very Slow' %>
+                                    </span>
+                                <% } else { %>
+                                    N/A
+                                <% } %>
+                            </td>
+                            <td>
+                                <% const responseTime2 = version2.analysis_data.statusInfo?.responseTime; %>
+                                <% if (responseTime2) { %>
+                                    <%= responseTime2 %>ms
+                                    <span class="badge <%= responseTime2 < 1000 ? 'bg-success' : responseTime2 < 3000 ? 'bg-warning' : 'bg-danger' %> ms-1">
+                                        <%= responseTime2 < 1000 ? 'Fast' : responseTime2 < 3000 ? 'Slow' : 'Very Slow' %>
+                                    </span>
+                                <% } else { %>
+                                    N/A
+                                <% } %>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Issues Found</strong></td>
+                            <td>
+                                <% const issues1 = version1.analysis_data.totalIssues || 0; %>
+                                <span class="badge <%= issues1 === 0 ? 'bg-success' : issues1 < 5 ? 'bg-warning' : 'bg-danger' %>"><%= issues1 %></span>
+                            </td>
+                            <td>
+                                <% const issues2 = version2.analysis_data.totalIssues || 0; %>
+                                <span class="badge <%= issues2 === 0 ? 'bg-success' : issues2 < 5 ? 'bg-warning' : 'bg-danger' %>"><%= issues2 %></span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Batch</strong></td>
+                            <td>
+                                <% if (version1.batch_name) { %>
+                                    <a href="/batch/<%= version1.batch_id %>" class="text-decoration-none">
+                                        <%= version1.batch_name %>
+                                    </a>
+                                <% } else { %>
+                                    Individual crawl
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (version2.batch_name) { %>
+                                    <a href="/batch/<%= version2.batch_id %>" class="text-decoration-none">
+                                        <%= version2.batch_name %>
+                                    </a>
+                                <% } else { %>
+                                    Individual crawl
+                                <% } %>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recommendations Comparison -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="meta-card">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>Version <%= version1.version_number %> Recommendations
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="recommendations-container">
+                            <% if (version1.recommendations && version1.recommendations.length > 0) { %>
+                                <% version1.recommendations.forEach(rec => { %>
+                                    <div class="recommendation-item recommendation-<%= rec.priority %>">
+                                        <strong><%= rec.issue %></strong>
+                                        <br>
+                                        <small><%= rec.suggestion %></small>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="text-muted text-center py-3">
+                                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                    <p>No recommendations</p>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="meta-card">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-lightbulb me-2"></i>Version <%= version2.version_number %> Recommendations
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="recommendations-container">
+                            <% if (version2.recommendations && version2.recommendations.length > 0) { %>
+                                <% version2.recommendations.forEach(rec => { %>
+                                    <div class="recommendation-item recommendation-<%= rec.priority %>">
+                                        <strong><%= rec.issue %></strong>
+                                        <br>
+                                        <small><%= rec.suggestion %></small>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <div class="text-muted text-center py-3">
+                                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                    <p>No recommendations</p>
+                                </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Meta Data Comparison -->
+        <div class="meta-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-tags me-2"></i>Meta Data Comparison
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table comparison-table">
+                    <thead>
+                        <tr>
+                            <th width="200">Meta Field</th>
+                            <th>Version <%= version1.version_number %></th>
+                            <th>Version <%= version2.version_number %></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="<%= (version1.analysis_data.meta?.keywords || '') !== (version2.analysis_data.meta?.keywords || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Keywords</strong></td>
+                            <td><%= version1.analysis_data.meta?.keywords || 'Not specified' %></td>
+                            <td><%= version2.analysis_data.meta?.keywords || 'Not specified' %></td>
+                        </tr>
+                        <tr class="<%= (version1.analysis_data.meta?.author || '') !== (version2.analysis_data.meta?.author || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Author</strong></td>
+                            <td><%= version1.analysis_data.meta?.author || 'Not specified' %></td>
+                            <td><%= version2.analysis_data.meta?.author || 'Not specified' %></td>
+                        </tr>
+                        <tr class="<%= (version1.analysis_data.meta?.canonical || '') !== (version2.analysis_data.meta?.canonical || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Canonical URL</strong></td>
+                            <td><%= version1.analysis_data.meta?.canonical || 'Not set' %></td>
+                            <td><%= version2.analysis_data.meta?.canonical || 'Not set' %></td>
+                        </tr>
+                        <tr class="<%= (version1.analysis_data.meta?.robots || '') !== (version2.analysis_data.meta?.robots || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Robots Meta</strong></td>
+                            <td><%= version1.analysis_data.meta?.robots || 'Not set' %></td>
+                            <td><%= version2.analysis_data.meta?.robots || 'Not set' %></td>
+                        </tr>
+                        <tr class="<%= (version1.analysis_data.meta?.viewport || '') !== (version2.analysis_data.meta?.viewport || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Viewport</strong></td>
+                            <td><%= version1.analysis_data.meta?.viewport || 'Not set' %></td>
+                            <td><%= version2.analysis_data.meta?.viewport || 'Not set' %></td>
+                        </tr>
+                        <tr class="<%= (version1.analysis_data.meta?.lang || '') !== (version2.analysis_data.meta?.lang || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Language</strong></td>
+                            <td><%= version1.analysis_data.meta?.lang || 'Not specified' %></td>
+                            <td><%= version2.analysis_data.meta?.lang || 'Not specified' %></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Open Graph & Social Media Comparison -->
+        <div class="meta-card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fab fa-facebook me-2"></i>Open Graph & Social Media
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table comparison-table">
+                    <thead>
+                        <tr>
+                            <th width="200">Social Field</th>
+                            <th>Version <%= version1.version_number %></th>
+                            <th>Version <%= version2.version_number %></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="<%= (version1.analysis_data.meta?.ogTitle || '') !== (version2.analysis_data.meta?.ogTitle || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>OG Title</strong></td>
+                            <td><%= version1.analysis_data.meta?.ogTitle || 'Not set' %></td>
+                            <td><%= version2.analysis_data.meta?.ogTitle || 'Not set' %></td>
+                        </tr>
+                        <tr class="<%= (version1.analysis_data.meta?.ogDescription || '') !== (version2.analysis_data.meta?.ogDescription || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>OG Description</strong></td>
+                            <td><%= version1.analysis_data.meta?.ogDescription || 'Not set' %></td>
+                            <td><%= version2.analysis_data.meta?.ogDescription || 'Not set' %></td>
+                        </tr>
+                        <tr class="<%= (version1.analysis_data.meta?.ogImage || '') !== (version2.analysis_data.meta?.ogImage || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>OG Image</strong></td>
+                            <td><%= version1.analysis_data.meta?.ogImage || 'Not set' %></td>
+                            <td><%= version2.analysis_data.meta?.ogImage || 'Not set' %></td>
+                        </tr>
+                        <tr class="<%= (version1.analysis_data.meta?.ogType || '') !== (version2.analysis_data.meta?.ogType || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>OG Type</strong></td>
+                            <td><%= version1.analysis_data.meta?.ogType || 'Not set' %></td>
+                            <td><%= version2.analysis_data.meta?.ogType || 'Not set' %></td>
+                        </tr>
+                        <tr class="<%= (version1.analysis_data.meta?.twitterCard || '') !== (version2.analysis_data.meta?.twitterCard || '') ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Twitter Card</strong></td>
+                            <td><%= version1.analysis_data.meta?.twitterCard || 'Not set' %></td>
+                            <td><%= version2.analysis_data.meta?.twitterCard || 'Not set' %></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Heading Structure Comparison -->
+        <div class="meta-card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-list-ol me-2"></i>Heading Structure Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table comparison-table">
+                    <thead>
+                        <tr>
+                            <th width="200">Heading Level</th>
+                            <th>Version <%= version1.version_number %></th>
+                            <th>Version <%= version2.version_number %></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].forEach(tag => { %>
+                            <% const count1 = version1.analysis_data.headings?.[tag]?.length || 0; %>
+                            <% const count2 = version2.analysis_data.headings?.[tag]?.length || 0; %>
+                            <tr class="<%= count1 !== count2 ? 'field-changed' : 'field-same' %>">
+                                <td><strong><%= tag.toUpperCase() %> Tags</strong></td>
+                                <td>
+                                    <span class="badge <%= count1 === 0 && tag === 'h1' ? 'bg-danger' : count1 > 1 && tag === 'h1' ? 'bg-warning' : 'bg-primary' %>"><%= count1 %></span>
+                                    <% if (count1 > 0 && version1.analysis_data.headings?.[tag]?.[0]) { %>
+                                        <div class="mt-1 small text-muted">
+                                            "<%= version1.analysis_data.headings[tag][0].substring(0, 60) %><%= version1.analysis_data.headings[tag][0].length > 60 ? '...' : '' %>"
+                                        </div>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <span class="badge <%= count2 === 0 && tag === 'h1' ? 'bg-danger' : count2 > 1 && tag === 'h1' ? 'bg-warning' : 'bg-primary' %>"><%= count2 %></span>
+                                    <% if (count2 > 0 && version2.analysis_data.headings?.[tag]?.[0]) { %>
+                                        <div class="mt-1 small text-muted">
+                                            "<%= version2.analysis_data.headings[tag][0].substring(0, 60) %><%= version2.analysis_data.headings[tag][0].length > 60 ? '...' : '' %>"
+                                        </div>
+                                    <% } %>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Images Analysis Comparison -->
+        <div class="meta-card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-images me-2"></i>Images Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table comparison-table">
+                    <thead>
+                        <tr>
+                            <th width="200">Image Metric</th>
+                            <th>Version <%= version1.version_number %></th>
+                            <th>Version <%= version2.version_number %></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% const images1 = version1.analysis_data.images || []; %>
+                        <% const images2 = version2.analysis_data.images || []; %>
+                        <% const imagesWithoutAlt1 = images1.filter(img => img.isEmpty).length; %>
+                        <% const imagesWithoutAlt2 = images2.filter(img => img.isEmpty).length; %>
+                        <tr class="<%= images1.length !== images2.length ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Total Images</strong></td>
+                            <td><span class="badge bg-primary"><%= images1.length %></span></td>
+                            <td><span class="badge bg-primary"><%= images2.length %></span></td>
+                        </tr>
+                        <tr class="<%= imagesWithoutAlt1 !== imagesWithoutAlt2 ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Missing Alt Text</strong></td>
+                            <td>
+                                <span class="badge <%= imagesWithoutAlt1 === 0 ? 'bg-success' : 'bg-danger' %>"><%= imagesWithoutAlt1 %></span>
+                                <% if (images1.length > 0) { %>
+                                    <small class="text-muted d-block">(<%= ((imagesWithoutAlt1 / images1.length) * 100).toFixed(1) %>%)</small>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="badge <%= imagesWithoutAlt2 === 0 ? 'bg-success' : 'bg-danger' %>"><%= imagesWithoutAlt2 %></span>
+                                <% if (images2.length > 0) { %>
+                                    <small class="text-muted d-block">(<%= ((imagesWithoutAlt2 / images2.length) * 100).toFixed(1) %>%)</small>
+                                <% } %>
+                            </td>
+                        </tr>
+                        <% const imagesWithAlt1 = images1.filter(img => !img.isEmpty).length; %>
+                        <% const imagesWithAlt2 = images2.filter(img => !img.isEmpty).length; %>
+                        <tr class="<%= imagesWithAlt1 !== imagesWithAlt2 ? 'field-changed' : 'field-same' %>">
+                            <td><strong>With Alt Text</strong></td>
+                            <td>
+                                <span class="badge <%= imagesWithAlt1 === images1.length && images1.length > 0 ? 'bg-success' : 'bg-warning' %>"><%= imagesWithAlt1 %></span>
+                            </td>
+                            <td>
+                                <span class="badge <%= imagesWithAlt2 === images2.length && images2.length > 0 ? 'bg-success' : 'bg-warning' %>"><%= imagesWithAlt2 %></span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Links Analysis Comparison -->
+        <div class="meta-card">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-link me-2"></i>Links Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table comparison-table">
+                    <thead>
+                        <tr>
+                            <th width="200">Link Type</th>
+                            <th>Version <%= version1.version_number %></th>
+                            <th>Version <%= version2.version_number %></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% const links1 = version1.analysis_data.links || {}; %>
+                        <% const links2 = version2.analysis_data.links || {}; %>
+                        <% const internal1 = links1.internal?.length || 0; %>
+                        <% const internal2 = links2.internal?.length || 0; %>
+                        <tr class="<%= internal1 !== internal2 ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Internal Links</strong></td>
+                            <td><span class="badge bg-success"><%= internal1 %></span></td>
+                            <td><span class="badge bg-success"><%= internal2 %></span></td>
+                        </tr>
+                        <% const external1 = links1.external?.length || 0; %>
+                        <% const external2 = links2.external?.length || 0; %>
+                        <tr class="<%= external1 !== external2 ? 'field-changed' : 'field-same' %>">
+                            <td><strong>External Links</strong></td>
+                            <td><span class="badge bg-info"><%= external1 %></span></td>
+                            <td><span class="badge bg-info"><%= external2 %></span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Links</strong></td>
+                            <td><span class="badge bg-primary"><%= internal1 + external1 %></span></td>
+                            <td><span class="badge bg-primary"><%= internal2 + external2 %></span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Internal/External Ratio</strong></td>
+                            <td>
+                                <% if (external1 > 0) { %>
+                                    <%= (internal1 / external1).toFixed(2) %>:1
+                                <% } else if (internal1 > 0) { %>
+                                    <%= internal1 %>:0
+                                <% } else { %>
+                                    0:0
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (external2 > 0) { %>
+                                    <%= (internal2 / external2).toFixed(2) %>:1
+                                <% } else if (internal2 > 0) { %>
+                                    <%= internal2 %>:0
+                                <% } else { %>
+                                    0:0
+                                <% } %>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Content Analysis Comparison -->
+        <div class="meta-card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-alt me-2"></i>Content Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table comparison-table">
+                    <thead>
+                        <tr>
+                            <th width="200">Content Metric</th>
+                            <th>Version <%= version1.version_number %></th>
+                            <th>Version <%= version2.version_number %></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% const content1 = version1.analysis_data.content || {}; %>
+                        <% const content2 = version2.analysis_data.content || {}; %>
+                        <% const wordCount1 = content1.wordCount || 0; %>
+                        <% const wordCount2 = content2.wordCount || 0; %>
+                        <tr class="<%= wordCount1 !== wordCount2 ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Word Count</strong></td>
+                            <td>
+                                <span class="badge <%= wordCount1 >= 300 ? 'bg-success' : wordCount1 >= 150 ? 'bg-warning' : 'bg-danger' %>"><%= wordCount1 %></span>
+                                <% if (wordCount1 < 300) { %>
+                                    <small class="text-muted d-block">Recommended: 300+</small>
+                                <% } %>
+                            </td>
+                            <td>
+                                <span class="badge <%= wordCount2 >= 300 ? 'bg-success' : wordCount2 >= 150 ? 'bg-warning' : 'bg-danger' %>"><%= wordCount2 %></span>
+                                <% if (wordCount2 < 300) { %>
+                                    <small class="text-muted d-block">Recommended: 300+</small>
+                                <% } %>
+                            </td>
+                        </tr>
+                        <% const charCount1 = content1.characterCount || 0; %>
+                        <% const charCount2 = content2.characterCount || 0; %>
+                        <tr class="<%= charCount1 !== charCount2 ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Character Count</strong></td>
+                            <td><span class="badge bg-info"><%= charCount1.toLocaleString() %></span></td>
+                            <td><span class="badge bg-info"><%= charCount2.toLocaleString() %></span></td>
+                        </tr>
+                        <% const sentences1 = content1.sentences || 0; %>
+                        <% const sentences2 = content2.sentences || 0; %>
+                        <tr class="<%= sentences1 !== sentences2 ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Sentences</strong></td>
+                            <td><span class="badge bg-secondary"><%= sentences1 %></span></td>
+                            <td><span class="badge bg-secondary"><%= sentences2 %></span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Reading Time</strong></td>
+                            <td>
+                                <% const readingTime1 = Math.ceil(wordCount1 / 200); %>
+                                <%= readingTime1 %> min
+                            </td>
+                            <td>
+                                <% const readingTime2 = Math.ceil(wordCount2 / 200); %>
+                                <%= readingTime2 %> min
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Structured Data (Schema) Comparison -->
+        <div class="meta-card">
+            <div class="card-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                <h5 class="mb-0">
+                    <i class="fas fa-code me-2"></i>Structured Data (Schema.org)
+                </h5>
+            </div>
+            <div class="card-body">
+                <table class="table comparison-table">
+                    <thead>
+                        <tr>
+                            <th width="200">Schema Element</th>
+                            <th>Version <%= version1.version_number %></th>
+                            <th>Version <%= version2.version_number %></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% const schema1 = version1.analysis_data.schema?.summary || {}; %>
+                        <% const schema2 = version2.analysis_data.schema?.summary || {}; %>
+                        <% const totalSchemas1 = schema1.totalSchemas || 0; %>
+                        <% const totalSchemas2 = schema2.totalSchemas || 0; %>
+                        <tr class="<%= totalSchemas1 !== totalSchemas2 ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Total Schemas</strong></td>
+                            <td>
+                                <span class="badge <%= totalSchemas1 > 0 ? 'bg-success' : 'bg-warning' %>"><%= totalSchemas1 %></span>
+                            </td>
+                            <td>
+                                <span class="badge <%= totalSchemas2 > 0 ? 'bg-success' : 'bg-warning' %>"><%= totalSchemas2 %></span>
+                            </td>
+                        </tr>
+                        <tr class="<%= schema1.hasOrganization !== schema2.hasOrganization ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Organization Schema</strong></td>
+                            <td>
+                                <span class="badge <%= schema1.hasOrganization ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= schema1.hasOrganization ? 'Present' : 'Missing' %>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge <%= schema2.hasOrganization ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= schema2.hasOrganization ? 'Present' : 'Missing' %>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr class="<%= schema1.hasWebsite !== schema2.hasWebsite ? 'field-changed' : 'field-same' %>">
+                            <td><strong>WebSite Schema</strong></td>
+                            <td>
+                                <span class="badge <%= schema1.hasWebsite ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= schema1.hasWebsite ? 'Present' : 'Missing' %>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge <%= schema2.hasWebsite ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= schema2.hasWebsite ? 'Present' : 'Missing' %>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr class="<%= schema1.hasBreadcrumb !== schema2.hasBreadcrumb ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Breadcrumb Schema</strong></td>
+                            <td>
+                                <span class="badge <%= schema1.hasBreadcrumb ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= schema1.hasBreadcrumb ? 'Present' : 'Missing' %>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge <%= schema2.hasBreadcrumb ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= schema2.hasBreadcrumb ? 'Present' : 'Missing' %>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr class="<%= schema1.hasArticle !== schema2.hasArticle ? 'field-changed' : 'field-same' %>">
+                            <td><strong>Article Schema</strong></td>
+                            <td>
+                                <span class="badge <%= schema1.hasArticle ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= schema1.hasArticle ? 'Present' : 'Missing' %>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge <%= schema2.hasArticle ? 'bg-success' : 'bg-secondary' %>">
+                                    <%= schema2.hasArticle ? 'Present' : 'Missing' %>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Technical Details -->
+        <div class="meta-card">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>Technical Details Comparison
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Version <%= version1.version_number %></h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Headings:</strong> H1: <%= version1.analysis_data.headings?.h1?.length || 0 %>, H2: <%= version1.analysis_data.headings?.h2?.length || 0 %></li>
+                            <li><strong>Images:</strong> <%= version1.analysis_data.images?.length || 0 %></li>
+                            <li><strong>Links:</strong> <%= version1.analysis_data.links?.internal?.length || 0 %> internal, <%= version1.analysis_data.links?.external?.length || 0 %> external</li>
+                            <li><strong>Performance:</strong> <%= version1.analysis_data.performance?.loadTime || 'N/A' %></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success">Version <%= version2.version_number %></h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Headings:</strong> H1: <%= version2.analysis_data.headings?.h1?.length || 0 %>, H2: <%= version2.analysis_data.headings?.h2?.length || 0 %></li>
+                            <li><strong>Images:</strong> <%= version2.analysis_data.images?.length || 0 %></li>
+                            <li><strong>Links:</strong> <%= version2.analysis_data.links?.internal?.length || 0 %> internal, <%= version2.analysis_data.links?.external?.length || 0 %> external</li>
+                            <li><strong>Performance:</strong> <%= version2.analysis_data.performance?.loadTime || 'N/A' %></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactive Score Calculator -->
+        <%- include('partials/score-calculator') %>
+
+        <!-- Action Buttons -->
+        <div class="text-center mt-4">
+            <a href="/url-history?url=<%= encodeURIComponent(url) %>" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-history me-1"></i>Back to History
+            </a>
+            <button class="btn btn-primary me-2" onclick="exportComparison()">
+                <i class="fas fa-download me-1"></i>Export Comparison
+            </button>
+            <button class="btn btn-info" onclick="shareComparison()">
+                <i class="fas fa-share me-1"></i>Share Comparison
+            </button>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const url = '<%= url %>';
+        const version1 = <%- JSON.stringify(version1) %>;
+        const version2 = <%- JSON.stringify(version2) %>;
+        
+        function exportComparison() {
+            const scoreDiff = version2.seo_score - version1.seo_score;
+            
+            // Extract detailed data for comparison
+            const images1 = version1.analysis_data.images || [];
+            const images2 = version2.analysis_data.images || [];
+            const imagesWithoutAlt1 = images1.filter(img => img.isEmpty).length;
+            const imagesWithoutAlt2 = images2.filter(img => img.isEmpty).length;
+            
+            const links1 = version1.analysis_data.links || {};
+            const links2 = version2.analysis_data.links || {};
+            const internal1 = links1.internal?.length || 0;
+            const internal2 = links2.internal?.length || 0;
+            const external1 = links1.external?.length || 0;
+            const external2 = links2.external?.length || 0;
+            
+            const content1 = version1.analysis_data.content || {};
+            const content2 = version2.analysis_data.content || {};
+            
+            const schema1 = version1.analysis_data.schema?.summary || {};
+            const schema2 = version2.analysis_data.schema?.summary || {};
+            
+            const csvContent = "data:text/csv;charset=utf-8," + 
+                "Field,Version " + version1.version_number + ",Version " + version2.version_number + ",Changed\n" +
+                `URL,"${url}","${url}",No\n` +
+                `SEO Score,${version1.seo_score},${version2.seo_score},${scoreDiff !== 0 ? 'Yes' : 'No'}\n` +
+                `Title,"${(version1.title || '').replace(/"/g, '""')}","${(version2.title || '').replace(/"/g, '""')}",${version1.title !== version2.title ? 'Yes' : 'No'}\n` +
+                `Title Length,${version1.analysis_data.meta?.titleLength || 0},${version2.analysis_data.meta?.titleLength || 0},${(version1.analysis_data.meta?.titleLength || 0) !== (version2.analysis_data.meta?.titleLength || 0) ? 'Yes' : 'No'}\n` +
+                `Description,"${(version1.description || '').replace(/"/g, '""')}","${(version2.description || '').replace(/"/g, '""')}",${version1.description !== version2.description ? 'Yes' : 'No'}\n` +
+                `Description Length,${version1.analysis_data.meta?.descriptionLength || 0},${version2.analysis_data.meta?.descriptionLength || 0},${(version1.analysis_data.meta?.descriptionLength || 0) !== (version2.analysis_data.meta?.descriptionLength || 0) ? 'Yes' : 'No'}\n` +
+                `Status Code,${version1.analysis_data.statusCode || 'N/A'},${version2.analysis_data.statusCode || 'N/A'},${version1.analysis_data.statusCode !== version2.analysis_data.statusCode ? 'Yes' : 'No'}\n` +
+                `Word Count,${content1.wordCount || 0},${content2.wordCount || 0},${content1.wordCount !== content2.wordCount ? 'Yes' : 'No'}\n` +
+                `Character Count,${content1.characterCount || 0},${content2.characterCount || 0},${content1.characterCount !== content2.characterCount ? 'Yes' : 'No'}\n` +
+                `Total Images,${images1.length},${images2.length},${images1.length !== images2.length ? 'Yes' : 'No'}\n` +
+                `Images Missing Alt,${imagesWithoutAlt1},${imagesWithoutAlt2},${imagesWithoutAlt1 !== imagesWithoutAlt2 ? 'Yes' : 'No'}\n` +
+                `Internal Links,${internal1},${internal2},${internal1 !== internal2 ? 'Yes' : 'No'}\n` +
+                `External Links,${external1},${external2},${external1 !== external2 ? 'Yes' : 'No'}\n` +
+                `H1 Tags,${version1.analysis_data.headings?.h1?.length || 0},${version2.analysis_data.headings?.h1?.length || 0},${(version1.analysis_data.headings?.h1?.length || 0) !== (version2.analysis_data.headings?.h1?.length || 0) ? 'Yes' : 'No'}\n` +
+                `H2 Tags,${version1.analysis_data.headings?.h2?.length || 0},${version2.analysis_data.headings?.h2?.length || 0},${(version1.analysis_data.headings?.h2?.length || 0) !== (version2.analysis_data.headings?.h2?.length || 0) ? 'Yes' : 'No'}\n` +
+                `H3 Tags,${version1.analysis_data.headings?.h3?.length || 0},${version2.analysis_data.headings?.h3?.length || 0},${(version1.analysis_data.headings?.h3?.length || 0) !== (version2.analysis_data.headings?.h3?.length || 0) ? 'Yes' : 'No'}\n` +
+                `Total Schemas,${schema1.totalSchemas || 0},${schema2.totalSchemas || 0},${(schema1.totalSchemas || 0) !== (schema2.totalSchemas || 0) ? 'Yes' : 'No'}\n` +
+                `Organization Schema,${schema1.hasOrganization ? 'Yes' : 'No'},${schema2.hasOrganization ? 'Yes' : 'No'},${schema1.hasOrganization !== schema2.hasOrganization ? 'Yes' : 'No'}\n` +
+                `WebSite Schema,${schema1.hasWebsite ? 'Yes' : 'No'},${schema2.hasWebsite ? 'Yes' : 'No'},${schema1.hasWebsite !== schema2.hasWebsite ? 'Yes' : 'No'}\n` +
+                `Breadcrumb Schema,${schema1.hasBreadcrumb ? 'Yes' : 'No'},${schema2.hasBreadcrumb ? 'Yes' : 'No'},${schema1.hasBreadcrumb !== schema2.hasBreadcrumb ? 'Yes' : 'No'}\n` +
+                `Date,${version1.created_at},${version2.created_at},N/A\n` +
+                `Batch,"${(version1.batch_name || 'Individual').replace(/"/g, '""')}","${(version2.batch_name || 'Individual').replace(/"/g, '""')}",${version1.batch_name !== version2.batch_name ? 'Yes' : 'No'}`;
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            const hostname = new URL(url).hostname;
+            const filename = `comparison-detailed-${hostname}-v${version1.version_number}-v${version2.version_number}-${new Date().toISOString().split('T')[0]}.csv`;
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function shareComparison() {
+            const shareUrl = window.location.href;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: `SEO Comparison: v${version1.version_number} vs v${version2.version_number}`,
+                    text: `Compare SEO versions for ${url}`,
+                    url: shareUrl
+                }).catch(console.error);
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    alert('Comparison URL copied to clipboard!');
+                }).catch(() => {
+                    // Manual copy fallback
+                    const textarea = document.createElement('textarea');
+                    textarea.value = shareUrl;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    alert('Comparison URL copied to clipboard!');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

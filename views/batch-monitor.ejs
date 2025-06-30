@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Crawler - Batch Monitor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .batch-status-badge {
+            font-size: 0.9rem;
+            padding: 6px 12px;
+        }
+        
+        .progress-container {
+            margin: 20px 0;
+        }
+        
+        .job-status-pending { color: #6c757d; }
+        .job-status-running { color: #0d6efd; }
+        .job-status-completed { color: #198754; }
+        .job-status-failed { color: #dc3545; }
+        .job-status-cancelled { color: #6f42c1; }
+        
+        .job-row {
+            transition: all 0.3s ease;
+        }
+        
+        .job-row.status-running {
+            background-color: #e3f2fd;
+        }
+        
+        .job-row.status-completed {
+            background-color: #e8f5e8;
+        }
+        
+        .job-row.status-failed {
+            background-color: #ffebee;
+        }
+        
+        .real-time-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: #28a745;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .batch-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .control-buttons {
+            margin: 20px 0;
+        }
+        
+        .job-table {
+            font-size: 0.9rem;
+        }
+        
+        .url-cell {
+            max-width: 300px;
+            word-break: break-all;
+        }
+        
+        .error-message {
+            max-width: 250px;
+            word-break: break-word;
+        }
+        
+        .error-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .error-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            border-radius: 3px;
+            color: white;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+        
+        .error-tag.timeout { background-color: #fd7e14; }
+        .error-tag.network { background-color: #dc3545; }
+        .error-tag.dns { background-color: #6f42c1; }
+        .error-tag.ssl { background-color: #e83e8c; }
+        .error-tag.http { background-color: #20c997; }
+        .error-tag.parsing { background-color: #ffc107; color: #000; }
+        .error-tag.unknown { background-color: #6c757d; }
+        
+        .job-row.filtered-out {
+            display: none;
+        }
+        
+        .status-filter-active {
+            background-color: var(--bs-primary) !important;
+            color: white !important;
+        }
+        
+        .seo-score-mini {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 0.8rem;
+        }
+        
+        .score-excellent { background: #28a745; }
+        .score-good { background: #ffc107; color: #000; }
+        .score-fair { background: #fd7e14; }
+        .score-poor { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>SEO Crawler
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports-overview">
+                            <i class="fas fa-chart-bar me-1"></i>Reports Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/browse">
+                            <i class="fas fa-history me-1"></i>Browse Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/batches">
+                            <i class="fas fa-tasks me-1"></i>Batches
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/url-versions">
+                            <i class="fas fa-code-branch me-1"></i>URL Versions
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i><%= user.username %>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2>
+                            <i class="fas fa-tasks me-2"></i>Batch Monitor
+                            <span class="real-time-indicator ms-2"></span>
+                        </h2>
+                        <p class="text-muted mb-0">Real-time monitoring of batch #<%= batchId %></p>
+                    </div>
+                    <div>
+                        <a href="/batches" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-arrow-left me-2"></i>All Batches
+                        </a>
+                        <a href="/" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>New Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batch Information -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Batch Information</h5>
+                    <span id="batchStatus" class="badge batch-status-badge">Loading...</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> <span id="batchName"><%= batch.name || 'Unnamed Batch' %></span></p>
+                        <p><strong>Created:</strong> <%= new Date(batch.created_at).toLocaleString() %></p>
+                        <p><strong>Created by:</strong> <%= batch.created_by_name %></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Total URLs:</strong> <span id="totalUrls"><%= batch.total_urls %></span></p>
+                        <p><strong>Concurrency:</strong> <%= batch.concurrency %> jobs</p>
+                        <p><strong>Delay:</strong> <%= batch.delay_ms %>ms between requests</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Statistics -->
+        <div class="batch-stats">
+            <div class="row">
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number" id="completedCount">0</span>
+                    <span class="stat-label">Completed</span>
+                </div>
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number" id="failedCount">0</span>
+                    <span class="stat-label">Failed</span>
+                </div>
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number" id="runningCount">0</span>
+                    <span class="stat-label">Running</span>
+                </div>
+                <div class="col-md-3 stat-item">
+                    <span class="stat-number" id="pendingCount">0</span>
+                    <span class="stat-label">Pending</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold">Overall Progress</span>
+                <span id="progressText">0%</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+                <div id="progressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div class="control-buttons">
+            <button id="pauseBtn" class="btn btn-warning d-none">
+                <i class="fas fa-pause me-2"></i>Pause Batch
+            </button>
+            <button id="resumeBtn" class="btn btn-success d-none">
+                <i class="fas fa-play me-2"></i>Resume Batch
+            </button>
+            <button id="cancelBtn" class="btn btn-danger">
+                <i class="fas fa-stop me-2"></i>Cancel Batch
+            </button>
+            <button id="retryBtn" class="btn btn-info d-none">
+                <i class="fas fa-redo me-2"></i>Retry Failed
+            </button>
+            <button id="exportBtn" class="btn btn-success">
+                <i class="fas fa-download me-2"></i>Export CSV
+            </button>
+            <button id="refreshBtn" class="btn btn-outline-secondary">
+                <i class="fas fa-sync me-2"></i>Refresh
+            </button>
+        </div>
+
+        <!-- Status Filters -->
+        <div class="card mb-3">
+            <div class="card-header bg-light">
+                <h6 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>Filter by Status
+                </h6>
+            </div>
+            <div class="card-body py-2">
+                <div class="btn-group" role="group" id="statusFilters">
+                    <input type="radio" class="btn-check" name="statusFilter" id="filter-all" value="all" checked>
+                    <label class="btn btn-outline-secondary btn-sm" for="filter-all">
+                        <i class="fas fa-list me-1"></i>All (<span id="count-all">0</span>)
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="statusFilter" id="filter-pending" value="pending">
+                    <label class="btn btn-outline-secondary btn-sm" for="filter-pending">
+                        <i class="fas fa-clock me-1"></i>Pending (<span id="count-pending">0</span>)
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="statusFilter" id="filter-running" value="running">
+                    <label class="btn btn-outline-primary btn-sm" for="filter-running">
+                        <i class="fas fa-spinner me-1"></i>Running (<span id="count-running">0</span>)
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="statusFilter" id="filter-completed" value="completed">
+                    <label class="btn btn-outline-success btn-sm" for="filter-completed">
+                        <i class="fas fa-check-circle me-1"></i>Completed (<span id="count-completed">0</span>)
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="statusFilter" id="filter-failed" value="failed">
+                    <label class="btn btn-outline-danger btn-sm" for="filter-failed">
+                        <i class="fas fa-times-circle me-1"></i>Failed (<span id="count-failed">0</span>)
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="statusFilter" id="filter-paused" value="paused">
+                    <label class="btn btn-outline-warning btn-sm" for="filter-paused">
+                        <i class="fas fa-pause me-1"></i>Paused (<span id="count-paused">0</span>)
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jobs Table -->
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>Job Details
+                        <span class="badge bg-primary ms-2" id="jobCount">0 jobs</span>
+                    </h5>
+                    <small id="filterInfo">Showing all jobs</small>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover job-table mb-0" id="jobsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th width="40">#</th>
+                            <th width="250">URL</th>
+                            <th width="100">Status</th>
+                            <th width="80">Score</th>
+                            <th width="100">Duration</th>
+                            <th width="250">Error Details</th>
+                            <th width="80">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobsTableBody">
+                        <!-- Jobs will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading batch data...</p>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const batchId = <%= batchId %>;
+        let socket;
+        let batchData = {};
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Batch monitor loaded for batch', batchId);
+            
+            // Initialize Socket.IO
+            initializeSocket();
+            
+            // Load initial data
+            loadBatchData();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Refresh data every 30 seconds as fallback
+            setInterval(loadBatchData, 30000);
+        });
+        
+        function initializeSocket() {
+            socket = io();
+            
+            socket.on('connect', () => {
+                console.log('Connected to real-time updates');
+                socket.emit('join-batch', batchId);
+            });
+            
+            socket.on('batch-update', (data) => {
+                if (data.batchId == batchId) {
+                    console.log('Batch update received:', data);
+                    updateBatchProgress(data);
+                }
+            });
+            
+            socket.on('job-update', (data) => {
+                if (data.batchId == batchId) {
+                    console.log('Job update received:', data);
+                    updateJobStatus(data);
+                }
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('Disconnected from real-time updates');
+            });
+        }
+        
+        async function loadBatchData() {
+            try {
+                const response = await fetch(`/api/batch/${batchId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    batchData = data;
+                    updateBatchInfo(data.batch);
+                    updateBatchStats(data.stats);
+                    updateJobsTable(data.jobs);
+                    document.getElementById('loadingIndicator').style.display = 'none';
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                console.error('Error loading batch data:', error);
+                alert('Failed to load batch data: ' + error.message);
+            }
+        }
+        
+        function updateBatchInfo(batch) {
+            document.getElementById('batchStatus').textContent = batch.status.toUpperCase();
+            document.getElementById('batchStatus').className = `badge batch-status-badge bg-${getStatusColor(batch.status)}`;
+            
+            // Update control buttons visibility
+            updateControlButtons(batch.status);
+        }
+        
+        function updateBatchStats(stats) {
+            document.getElementById('completedCount').textContent = stats.completed_jobs || 0;
+            document.getElementById('failedCount').textContent = stats.failed_jobs || 0;
+            document.getElementById('runningCount').textContent = stats.running_jobs || 0;
+            document.getElementById('pendingCount').textContent = stats.pending_jobs || 0;
+            
+            const total = stats.total_jobs || 0;
+            const completed = (stats.completed_jobs || 0) + (stats.failed_jobs || 0);
+            const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+            
+            document.getElementById('progressText').textContent = `${progress}%`;
+            document.getElementById('progressBar').style.width = `${progress}%`;
+            document.getElementById('jobCount').textContent = `${total} jobs`;
+        }
+        
+        function updateBatchProgress(data) {
+            if (data.status) {
+                updateBatchInfo({ status: data.status });
+            }
+            
+            if (data.completed !== undefined) {
+                updateBatchStats({
+                    completed_jobs: data.completed,
+                    failed_jobs: data.failed,
+                    total_jobs: data.total,
+                    running_jobs: batchData.stats?.running_jobs || 0,
+                    pending_jobs: data.total - data.completed - data.failed
+                });
+            }
+        }
+        
+        let allJobs = [];
+        let currentFilter = 'all';
+        
+        function updateJobsTable(jobs) {
+            allJobs = jobs;
+            updateFilterCounts();
+            filterAndDisplayJobs();
+        }
+        
+        function updateFilterCounts() {
+            const counts = {
+                all: allJobs.length,
+                pending: allJobs.filter(j => j.status === 'pending').length,
+                running: allJobs.filter(j => j.status === 'running').length,
+                completed: allJobs.filter(j => j.status === 'completed').length,
+                failed: allJobs.filter(j => j.status === 'failed').length,
+                paused: allJobs.filter(j => j.status === 'paused').length
+            };
+            
+            Object.keys(counts).forEach(status => {
+                const countElement = document.getElementById(`count-${status}`);
+                if (countElement) {
+                    countElement.textContent = counts[status];
+                }
+            });
+        }
+        
+        function filterAndDisplayJobs() {
+            const tbody = document.getElementById('jobsTableBody');
+            tbody.innerHTML = '';
+            
+            const filteredJobs = currentFilter === 'all' ? 
+                allJobs : 
+                allJobs.filter(job => job.status === currentFilter);
+            
+            filteredJobs.forEach((job, index) => {
+                const row = createJobRow(job, index + 1);
+                tbody.appendChild(row);
+            });
+            
+            // Update filter info
+            const filterInfo = document.getElementById('filterInfo');
+            if (currentFilter === 'all') {
+                filterInfo.textContent = `Showing all ${allJobs.length} jobs`;
+            } else {
+                filterInfo.textContent = `Showing ${filteredJobs.length} ${currentFilter} jobs`;
+            }
+        }
+        
+        function createJobRow(job, index) {
+            const row = document.createElement('tr');
+            row.className = `job-row status-${job.status}`;
+            row.dataset.jobId = job.id;
+            
+            const scoreDisplay = job.seo_score ? 
+                `<div class="seo-score-mini ${getScoreClass(job.seo_score)}">${job.seo_score}</div>` : 
+                '<span class="text-muted">-</span>';
+            
+            const duration = job.started_at && job.completed_at ? 
+                calculateDuration(job.started_at, job.completed_at) : 
+                (job.started_at ? 'Running...' : '-');
+            
+            const actions = job.status === 'completed' && job.report_id ? 
+                `<a href="/report/${job.report_id}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i></a>` :
+                '-';
+            
+            row.innerHTML = `
+                <td>${index}</td>
+                <td class="url-cell">
+                    <a href="${job.url}" target="_blank" class="text-decoration-none" title="${job.url}">
+                        ${job.url.length > 40 ? job.url.substring(0, 40) + '...' : job.url}
+                    </a>
+                </td>
+                <td><span class="job-status-${job.status}"><i class="fas fa-${getStatusIcon(job.status)} me-1"></i>${job.status}</span></td>
+                <td>${scoreDisplay}</td>
+                <td>${duration}</td>
+                <td class="error-message">
+                    ${job.error_message ? createErrorTags(job.error_message) : '-'}
+                </td>
+                <td>${actions}</td>
+            `;
+            
+            return row;
+        }
+        
+        function updateJobStatus(data) {
+            const row = document.querySelector(`tr[data-job-id="${data.jobId}"]`);
+            if (row) {
+                // Update the specific job row
+                const job = {
+                    id: data.jobId,
+                    url: data.url,
+                    status: data.status,
+                    seo_score: data.seoScore,
+                    error_message: data.error,
+                    report_id: data.reportId,
+                    started_at: row.dataset.startedAt,
+                    completed_at: data.status === 'completed' ? new Date().toISOString() : null
+                };
+                
+                const index = Array.from(row.parentNode.children).indexOf(row) + 1;
+                const newRow = createJobRow(job, index);
+                row.replaceWith(newRow);
+                
+                // Update stats if needed
+                loadBatchData();
+            }
+        }
+        
+        function updateControlButtons(status) {
+            const pauseBtn = document.getElementById('pauseBtn');
+            const resumeBtn = document.getElementById('resumeBtn');
+            const cancelBtn = document.getElementById('cancelBtn');
+            const retryBtn = document.getElementById('retryBtn');
+            
+            // Hide all first
+            pauseBtn.classList.add('d-none');
+            resumeBtn.classList.add('d-none');
+            retryBtn.classList.add('d-none');
+            
+            switch (status) {
+                case 'pending':
+                case 'running':
+                    pauseBtn.classList.remove('d-none');
+                    break;
+                case 'paused':
+                    resumeBtn.classList.remove('d-none');
+                    break;
+                case 'completed':
+                case 'failed':
+                    retryBtn.classList.remove('d-none');
+                    cancelBtn.classList.add('d-none');
+                    break;
+                case 'cancelled':
+                    cancelBtn.classList.add('d-none');
+                    break;
+            }
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('pauseBtn').addEventListener('click', async () => {
+                if (confirm('Are you sure you want to pause this batch? Running jobs will continue, but no new jobs will start.')) {
+                    try {
+                        const response = await fetch(`/api/batch/${batchId}/pause`, {
+                            method: 'POST'
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            alert(data.message);
+                            loadBatchData();
+                        } else {
+                            const data = await response.json();
+                            alert('Failed to pause batch: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('Error pausing batch: ' + error.message);
+                    }
+                }
+            });
+
+            document.getElementById('resumeBtn').addEventListener('click', async () => {
+                if (confirm('Resume processing this batch?')) {
+                    try {
+                        const response = await fetch(`/api/batch/${batchId}/resume`, {
+                            method: 'POST'
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            alert(data.message);
+                            loadBatchData();
+                        } else {
+                            const data = await response.json();
+                            alert('Failed to resume batch: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('Error resuming batch: ' + error.message);
+                    }
+                }
+            });
+
+            document.getElementById('cancelBtn').addEventListener('click', async () => {
+                if (confirm('Are you sure you want to cancel this batch? Running jobs will be stopped.')) {
+                    try {
+                        const response = await fetch(`/api/batch/${batchId}/cancel`, {
+                            method: 'POST'
+                        });
+                        
+                        if (response.ok) {
+                            alert('Batch cancelled successfully');
+                            loadBatchData();
+                        } else {
+                            const data = await response.json();
+                            alert('Failed to cancel batch: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('Error cancelling batch: ' + error.message);
+                    }
+                }
+            });
+            
+            document.getElementById('retryBtn').addEventListener('click', async () => {
+                if (confirm('Retry all failed jobs in this batch?')) {
+                    try {
+                        const response = await fetch(`/api/batch/${batchId}/retry-failed`, {
+                            method: 'POST'
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            alert(data.message);
+                            loadBatchData();
+                        } else {
+                            const data = await response.json();
+                            alert('Failed to retry failed jobs: ' + data.error);
+                        }
+                    } catch (error) {
+                        alert('Error retrying failed jobs: ' + error.message);
+                    }
+                }
+            });
+            
+            document.getElementById('exportBtn').addEventListener('click', async () => {
+                try {
+                    const response = await fetch(`/api/batch/${batchId}/export`);
+                    
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `batch-${batchId}-export.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                    } else {
+                        const data = await response.json();
+                        alert('Failed to export batch: ' + data.error);
+                    }
+                } catch (error) {
+                    alert('Error exporting batch: ' + error.message);
+                }
+            });
+            
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                loadBatchData();
+            });
+            
+            // Status filter event listeners
+            document.querySelectorAll('input[name="statusFilter"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    currentFilter = e.target.value;
+                    filterAndDisplayJobs();
+                });
+            });
+        }
+        
+        // Utility functions
+        function getStatusColor(status) {
+            const colors = {
+                'pending': 'secondary',
+                'running': 'primary',
+                'completed': 'success',
+                'failed': 'danger',
+                'cancelled': 'warning',
+                'paused': 'warning'
+            };
+            return colors[status] || 'secondary';
+        }
+        
+        function getStatusIcon(status) {
+            const icons = {
+                'pending': 'clock',
+                'running': 'spinner fa-spin',
+                'completed': 'check-circle',
+                'failed': 'times-circle',
+                'cancelled': 'ban',
+                'paused': 'pause'
+            };
+            return icons[status] || 'question-circle';
+        }
+        
+        function getScoreClass(score) {
+            if (score >= 80) return 'score-excellent';
+            if (score >= 60) return 'score-good';
+            if (score >= 40) return 'score-fair';
+            return 'score-poor';
+        }
+        
+        function calculateDuration(start, end) {
+            const duration = new Date(end) - new Date(start);
+            return Math.round(duration / 1000) + 's';
+        }
+        
+        function createErrorTags(errorMessage) {
+            if (!errorMessage) return '-';
+            
+            const tags = [];
+            const message = errorMessage.toLowerCase();
+            
+            // Analyze error message and create appropriate tags
+            if (message.includes('timeout') || message.includes('timed out')) {
+                tags.push('<span class="error-tag timeout">Timeout</span>');
+            }
+            
+            if (message.includes('network') || message.includes('connection') || message.includes('connect')) {
+                tags.push('<span class="error-tag network">Network</span>');
+            }
+            
+            if (message.includes('dns') || message.includes('getaddrinfo') || message.includes('enotfound')) {
+                tags.push('<span class="error-tag dns">DNS</span>');
+            }
+            
+            if (message.includes('ssl') || message.includes('tls') || message.includes('certificate')) {
+                tags.push('<span class="error-tag ssl">SSL/TLS</span>');
+            }
+            
+            if (message.includes('404') || message.includes('403') || message.includes('500') || 
+                message.includes('502') || message.includes('503') || message.includes('http')) {
+                tags.push('<span class="error-tag http">HTTP Error</span>');
+            }
+            
+            if (message.includes('parse') || message.includes('parsing') || message.includes('invalid')) {
+                tags.push('<span class="error-tag parsing">Parsing</span>');
+            }
+            
+            // If no specific error type detected, mark as unknown
+            if (tags.length === 0) {
+                tags.push('<span class="error-tag unknown">Unknown</span>');
+            }
+            
+            // Add the full error message as a tooltip
+            const tagContainer = `<div class="error-tags" title="${errorMessage.replace(/"/g, '&quot;')}">${tags.join('')}</div>`;
+            
+            // Show truncated error message below tags
+            const truncatedMessage = errorMessage.length > 50 ? 
+                errorMessage.substring(0, 50) + '...' : 
+                errorMessage;
+            
+            return `${tagContainer}<small class="text-muted d-block mt-1">${truncatedMessage}</small>`;
+        }
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (socket) {
+                socket.emit('leave-batch', batchId);
+                socket.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEO Crawler - URL Versions Overview</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        .version-badge {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .crawl-count {
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .url-cell {
+            max-width: 300px;
+            word-break: break-all;
+        }
+        
+        .score-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            margin: 0 auto;
+        }
+        
+        .score-excellent { background: #28a745; }
+        .score-good { background: #ffc107; color: #000; }
+        .score-fair { background: #fd7e14; }
+        .score-poor { background: #dc3545; }
+        
+        .action-buttons .btn {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+            margin: 0 2px;
+        }
+        
+        .table-header-sticky {
+            position: sticky;
+            top: 0;
+            background: #343a40;
+            z-index: 10;
+        }
+        
+        .version-info {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .stats-card {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            margin: 2px;
+        }
+        
+        .stat-number {
+            font-size: 1.4rem;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 2px;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .pagination-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+        }
+
+        .page-controls {
+            gap: 1rem;
+        }
+
+        .pagination .page-link {
+            color: #007bff;
+            border-color: #dee2e6;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .pagination .page-link:hover {
+            color: #0056b3;
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-search me-2"></i>SEO Crawler
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/reports-overview">
+                            <i class="fas fa-chart-bar me-1"></i>Reports Overview
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/browse">
+                            <i class="fas fa-history me-1"></i>Browse Reports
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/batches">
+                            <i class="fas fa-tasks me-1"></i>Batches
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/url-versions">
+                            <i class="fas fa-code-branch me-1"></i>URL Versions
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i><%= user.username %>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/logout">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container my-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2>
+                            <i class="fas fa-code-branch me-2"></i>URL Versions Overview
+                        </h2>
+                        <p class="text-muted mb-0">Track and compare different versions of your crawled URLs</p>
+                    </div>
+                    <div>
+                        <a href="/" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>New Analysis
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-card">
+            <div class="row g-1">
+                <div class="col-lg-3 col-md-6 col-6">
+                    <div class="stat-item">
+                        <span class="stat-number"><%= pagination ? pagination.totalCount : urls.length %></span>
+                        <span class="stat-label">Unique URLs</span>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-6">
+                    <div class="stat-item">
+                        <span class="stat-number"><%= urls.reduce((sum, url) => sum + url.total_crawls, 0) %></span>
+                        <span class="stat-label">Total Crawls</span>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-6">
+                    <div class="stat-item">
+                        <span class="stat-number"><%= urls.filter(url => url.current_version > 1).length %></span>
+                        <span class="stat-label">Multi-Version</span>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 col-6">
+                    <div class="stat-item">
+                        <span class="stat-number"><%= urls.length > 0 ? Math.max(...urls.map(url => url.current_version || 1)) : 0 %></span>
+                        <span class="stat-label">Highest Version</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Filter Controls -->
+        <div class="filter-controls" style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e9ecef;">
+            <form method="GET" action="/url-versions" id="filterForm">
+                <div class="row g-2 align-items-end">
+                    <!-- First Row -->
+                    <div class="col-lg-2 col-md-3 col-6">
+                        <label class="form-label small">Search URLs/Titles:</label>
+                        <input type="text" class="form-control form-control-sm" name="search" value="<%= (typeof filters !== 'undefined' && filters) ? filters.search : '' %>" placeholder="Search terms">
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-6">
+                        <label class="form-label small">SEO Score:</label>
+                        <select class="form-select form-select-sm" name="scoreRange">
+                            <option value="">All Scores</option>
+                            <option value="excellent" <%= (typeof filters !== 'undefined' && filters && filters.scoreRange === 'excellent') ? 'selected' : '' %>>Excellent (80+)</option>
+                            <option value="good" <%= (typeof filters !== 'undefined' && filters && filters.scoreRange === 'good') ? 'selected' : '' %>>Good (60-79)</option>
+                            <option value="fair" <%= (typeof filters !== 'undefined' && filters && filters.scoreRange === 'fair') ? 'selected' : '' %>>Fair (40-59)</option>
+                            <option value="poor" <%= (typeof filters !== 'undefined' && filters && filters.scoreRange === 'poor') ? 'selected' : '' %>>Poor (0-39)</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-6">
+                        <label class="form-label small">Version Count:</label>
+                        <select class="form-select form-select-sm" name="versionRange">
+                            <option value="">All Versions</option>
+                            <option value="single" <%= (typeof filters !== 'undefined' && filters && filters.versionRange === 'single') ? 'selected' : '' %>>Single Version</option>
+                            <option value="multiple" <%= (typeof filters !== 'undefined' && filters && filters.versionRange === 'multiple') ? 'selected' : '' %>>Multiple Versions</option>
+                            <option value="high" <%= (typeof filters !== 'undefined' && filters && filters.versionRange === 'high') ? 'selected' : '' %>>High (5+ Versions)</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-6">
+                        <label class="form-label small">Crawl Frequency:</label>
+                        <select class="form-select form-select-sm" name="crawlFrequency">
+                            <option value="">All Frequencies</option>
+                            <option value="once" <%= (typeof filters !== 'undefined' && filters && filters.crawlFrequency === 'once') ? 'selected' : '' %>>Crawled Once</option>
+                            <option value="few" <%= (typeof filters !== 'undefined' && filters && filters.crawlFrequency === 'few') ? 'selected' : '' %>>Few Times (2-5)</option>
+                            <option value="many" <%= (typeof filters !== 'undefined' && filters && filters.crawlFrequency === 'many') ? 'selected' : '' %>>Many Times (5+)</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-6">
+                        <label class="form-label small">Date Range:</label>
+                        <select class="form-select form-select-sm" name="dateRange">
+                            <option value="">All Time</option>
+                            <option value="today" <%= (typeof filters !== 'undefined' && filters && filters.dateRange === 'today') ? 'selected' : '' %>>Today</option>
+                            <option value="week" <%= (typeof filters !== 'undefined' && filters && filters.dateRange === 'week') ? 'selected' : '' %>>This Week</option>
+                            <option value="month" <%= (typeof filters !== 'undefined' && filters && filters.dateRange === 'month') ? 'selected' : '' %>>This Month</option>
+                            <option value="3months" <%= (typeof filters !== 'undefined' && filters && filters.dateRange === '3months') ? 'selected' : '' %>>Last 3 Months</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-6">
+                        <label class="form-label small">Per Page:</label>
+                        <select class="form-select form-select-sm" name="limit" onchange="this.form.submit()">
+                            <option value="25" <%= (typeof pagination !== 'undefined' && pagination && pagination.limit === 25) ? 'selected' : '' %>>25</option>
+                            <option value="50" <%= (typeof pagination !== 'undefined' && pagination && pagination.limit === 50) ? 'selected' : '' %>>50</option>
+                            <option value="100" <%= (typeof pagination !== 'undefined' && pagination && pagination.limit === 100) ? 'selected' : '' %>>100</option>
+                            <option value="250" <%= (typeof pagination !== 'undefined' && pagination && pagination.limit === 250) ? 'selected' : '' %>>250</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Second Row -->
+                <div class="row g-2 align-items-end mt-2">
+                    <div class="col-lg-8 col-md-8 col-12">
+                        <div class="d-flex gap-1">
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i class="fas fa-search me-1"></i>Apply Filters
+                            </button>
+                            <a href="/url-versions" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </a>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="exportFilteredData()">
+                                <i class="fas fa-download me-1"></i>Export
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-12 text-end">
+                        <small class="text-muted">
+                            <% if ((typeof filters !== 'undefined' && filters) && (filters.search || filters.scoreRange || filters.versionRange || filters.crawlFrequency || filters.dateRange)) { %>
+                                <i class="fas fa-filter me-1"></i>Filters applied
+                            <% } else { %>
+                                <i class="fas fa-list me-1"></i>Showing all data
+                            <% } %>
+                        </small>
+                    </div>
+                </div>
+                <input type="hidden" name="page" value="<%= (typeof pagination !== 'undefined' && pagination) ? pagination.currentPage : 1 %>">
+            </form>
+        </div>
+
+        <!-- Info Box -->
+        <div class="version-info">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="mb-1"><i class="fas fa-info-circle me-2"></i>URL Versioning System</h5>
+                    <p class="mb-0">Each time a URL is crawled, a new version is created automatically. Compare versions to track changes in SEO performance, content, and metadata over time.</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-primary btn-sm" onclick="refreshData()">
+                            <i class="fas fa-sync me-1"></i>Refresh
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="exportData()">
+                            <i class="fas fa-download me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- URLs Table -->
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>URLs with Version History
+                    </h5>
+                    <span class="badge bg-primary">
+                        <% if (pagination) { %>
+                            Showing <%= urls.length %> of <%= pagination.totalCount %> URLs
+                        <% } else { %>
+                            <%= urls.length %> URLs
+                        <% } %>
+                    </span>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-dark table-header-sticky">
+                        <tr>
+                            <th width="300">URL</th>
+                            <th width="100">Current Version</th>
+                            <th width="80">Total Crawls</th>
+                            <th width="80">Latest Score</th>
+                            <th width="120">Title</th>
+                            <th width="150">Last Crawled</th>
+                            <th width="200">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (urls.length === 0) { %>
+                            <tr>
+                                <td colspan="7" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-search fa-3x mb-3"></i>
+                                        <h5>No versioned URLs found</h5>
+                                        <p>Start crawling URLs to build version history</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% } else { %>
+                            <% urls.forEach((url, index) => { %>
+                                <tr>
+                                    <td class="url-cell">
+                                        <a href="<%= url.url %>" target="_blank" class="text-decoration-none" title="<%= url.url %>">
+                                            <i class="fas fa-external-link-alt me-1"></i>
+                                            <%= url.url.length > 50 ? url.url.substring(0, 50) + '...' : url.url %>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="version-badge">v<%= url.current_version %></span>
+                                    </td>
+                                    <td>
+                                        <div class="crawl-count"><%= url.total_crawls %></div>
+                                    </td>
+                                    <td>
+                                        <% if (url.seo_score !== null && url.seo_score !== undefined) { %>
+                                            <div class="score-circle <%= url.seo_score >= 80 ? 'score-excellent' : url.seo_score >= 60 ? 'score-good' : url.seo_score >= 40 ? 'score-fair' : 'score-poor' %>">
+                                                <%= url.seo_score %>
+                                            </div>
+                                        <% } else { %>
+                                            <span class="text-muted">-</span>
+                                        <% } %>
+                                    </td>
+                                    <td title="<%= url.title || 'No title' %>">
+                                        <%= url.title ? (url.title.length > 30 ? url.title.substring(0, 30) + '...' : url.title) : 'No title' %>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            <%= new Date(url.last_crawled).toLocaleDateString() %>
+                                            <br>
+                                            <%= new Date(url.last_crawled).toLocaleTimeString() %>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="/url-history?url=<%= encodeURIComponent(url.url) %>" class="btn btn-primary" title="View History">
+                                                <i class="fas fa-history"></i> History
+                                            </a>
+                                            <% if (url.current_version > 1) { %>
+                                                <a href="/url-compare?url=<%= encodeURIComponent(url.url) %>&v1=<%= url.current_version - 1 %>&v2=<%= url.current_version %>" class="btn btn-info" title="Compare Latest">
+                                                    <i class="fas fa-exchange-alt"></i> Compare
+                                                </a>
+                                            <% } %>
+                                            <button class="btn btn-outline-secondary" onclick="viewVersions('<%= url.url %>')" title="All Versions">
+                                                <i class="fas fa-list"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <% if (pagination) { %>
+        <div class="d-flex justify-content-between align-items-center mt-4 page-controls">
+            <div class="text-muted">
+                Showing <%= ((pagination.currentPage - 1) * pagination.limit) + 1 %>-<%= Math.min(pagination.currentPage * pagination.limit, pagination.totalCount) %> of <%= pagination.totalCount %> URLs
+            </div>
+            <% if (pagination.totalPages > 1) { %>
+            <nav aria-label="URL versions pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item <%= !pagination.hasPrevPage ? 'disabled' : '' %>">
+                        <a class="page-link" href="?<%= new URLSearchParams(Object.assign({}, (typeof filters !== 'undefined' && filters) ? filters : {}, {page: pagination.currentPage - 1, limit: pagination.limit})).toString() %>">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                    
+                    <% for (let i = Math.max(1, pagination.currentPage - 2); i <= Math.min(pagination.totalPages, pagination.currentPage + 2); i++) { %>
+                        <li class="page-item <%= i === pagination.currentPage ? 'active' : '' %>">
+                            <a class="page-link" href="?<%= new URLSearchParams(Object.assign({}, (typeof filters !== 'undefined' && filters) ? filters : {}, {page: i, limit: pagination.limit})).toString() %>"><%= i %></a>
+                        </li>
+                    <% } %>
+                    
+                    <li class="page-item <%= !pagination.hasNextPage ? 'disabled' : '' %>">
+                        <a class="page-link" href="?<%= new URLSearchParams(Object.assign({}, (typeof filters !== 'undefined' && filters) ? filters : {}, {page: pagination.currentPage + 1, limit: pagination.limit})).toString() %>">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <% } else { %>
+            <div class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>All URLs displayed on single page
+            </div>
+            <% } %>
+            <div class="d-flex align-items-center gap-2">
+                <% if (pagination.totalPages > 10) { %>
+                <div class="input-group input-group-sm" style="width: 120px;">
+                    <input type="number" class="form-control" placeholder="Page" min="1" max="<%= pagination.totalPages %>" 
+                           value="<%= pagination.currentPage %>" id="gotoPage">
+                    <button class="btn btn-outline-secondary" onclick="goToPage()">Go</button>
+                </div>
+                <% } %>
+                <select class="form-select form-select-sm" onchange="changePageSize(this.value)" style="width: auto;">
+                    <option value="25" <%= pagination.limit === 25 ? 'selected' : '' %>>25 per page</option>
+                    <option value="50" <%= pagination.limit === 50 ? 'selected' : '' %>>50 per page</option>
+                    <option value="100" <%= pagination.limit === 100 ? 'selected' : '' %>>100 per page</option>
+                    <option value="250" <%= pagination.limit === 250 ? 'selected' : '' %>>250 per page</option>
+                    <option value="500" <%= pagination.limit === 500 ? 'selected' : '' %>>500 per page</option>
+                    <option value="10000" <%= pagination.limit >= 10000 ? 'selected' : '' %>>Show All</option>
+                </select>
+            </div>
+        </div>
+        <% } %>
+    </main>
+
+    <!-- Version Modal -->
+    <div class="modal fade" id="versionsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-code-branch me-2"></i>Version History
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="versionsModalBody">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function viewVersions(url) {
+            const modal = new bootstrap.Modal(document.getElementById('versionsModal'));
+            const modalBody = document.getElementById('versionsModalBody');
+            
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading versions for ${url}...</p>
+                </div>
+            `;
+            
+            modal.show();
+            
+            try {
+                const response = await fetch(`/api/url/versions?url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    modalBody.innerHTML = generateVersionsHTML(data.versions, url);
+                } else {
+                    modalBody.innerHTML = `<div class="alert alert-danger">Failed to load versions: ${data.error}</div>`;
+                }
+            } catch (error) {
+                modalBody.innerHTML = `<div class="alert alert-danger">Error loading versions: ${error.message}</div>`;
+            }
+        }
+        
+        function generateVersionsHTML(versions, url) {
+            if (versions.length === 0) {
+                return '<div class="alert alert-info">No versions found for this URL.</div>';
+            }
+            
+            let html = `
+                <div class="mb-3">
+                    <strong>URL:</strong> <a href="${url}" target="_blank">${url}</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Version</th>
+                                <th>SEO Score</th>
+                                <th>Title</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            versions.forEach(version => {
+                const scoreClass = version.seo_score >= 80 ? 'success' : 
+                                 version.seo_score >= 60 ? 'warning' : 
+                                 version.seo_score >= 40 ? 'info' : 'danger';
+                
+                html += `
+                    <tr>
+                        <td><span class="badge bg-primary">v${version.version_number}</span></td>
+                        <td><span class="badge bg-${scoreClass}">${version.seo_score}</span></td>
+                        <td title="${version.title}">${version.title ? (version.title.length > 40 ? version.title.substring(0, 40) + '...' : version.title) : 'No title'}</td>
+                        <td><small>${new Date(version.created_at).toLocaleDateString()}</small></td>
+                        <td>
+                            <a href="/url-history?url=${encodeURIComponent(url)}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        function refreshData() {
+            window.location.reload();
+        }
+        
+        async function exportData() {
+            try {
+                const response = await fetch('/api/urls-overview');
+                const data = await response.json();
+                
+                // Convert to CSV
+                const csvContent = "data:text/csv;charset=utf-8," + 
+                    "URL,Current Version,Total Crawls,Latest Score,Title,Last Crawled\n" +
+                    data.map(url => 
+                        `"${url.url}",${url.current_version},${url.total_crawls},${url.seo_score || 'N/A'},"${(url.title || '').replace(/"/g, '""')}",${url.last_crawled}`
+                    ).join('\n');
+                
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement('a');
+                link.setAttribute('href', encodedUri);
+                link.setAttribute('download', `url-versions-${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                alert('Failed to export data: ' + error.message);
+            }
+        }
+
+        // Function to change page size
+        function changePageSize(newLimit) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('limit', newLimit);
+            urlParams.set('page', 1); // Reset to first page when changing limit
+            window.location.href = window.location.pathname + '?' + urlParams.toString();
+        }
+
+        // Function to go to specific page
+        function goToPage() {
+            const pageInput = document.getElementById('gotoPage');
+            const pageNumber = parseInt(pageInput.value);
+            
+            if (pageNumber && pageNumber >= 1 && pageNumber <= <%= pagination ? pagination.totalPages : 1 %>) {
+                const urlParams = new URLSearchParams(window.location.search);
+                urlParams.set('page', pageNumber);
+                window.location.href = window.location.pathname + '?' + urlParams.toString();
+            } else {
+                alert('Please enter a valid page number between 1 and <%= pagination ? pagination.totalPages : 1 %>');
+            }
+        }
+
+        // Allow Enter key to submit go to page
+        document.addEventListener('DOMContentLoaded', function() {
+            const pageInput = document.getElementById('gotoPage');
+            if (pageInput) {
+                pageInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        goToPage();
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
