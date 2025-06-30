@@ -75,9 +75,10 @@ The application requires persistent storage for the SQLite database:
 
 ### 1. First-Time Setup
 After deployment, your app will:
-- ✅ Automatically create the database
-- ✅ Set up all required tables
+- ✅ Automatically create the database and all required tables
+- ✅ Wait for database initialization to complete
 - ✅ Create initial admin user (if credentials provided)
+- ✅ Start the web server when ready
 
 ### 2. Access Your Application
 1. **Find your app URL** in the Render dashboard
@@ -103,10 +104,13 @@ After deployment, your app will:
 ### Key Log Messages
 ```
 ✅ Database path: /opt/render/project/src/data/seo_reports.db
+🔧 Running production setup...
+⏳ Waiting for database initialization...
+✅ Production setup completed
 ✅ Admin user 'admin' created successfully
-✅ SEO Crawler Web Interface running on port 10000
-✅ Environment: production
-✅ Health check available at: /health
+🚀 SEO Crawler Web Interface running on port 10000
+🌍 Environment: production
+❤️  Health check available at: /health
 ```
 
 ## 🛠️ Troubleshooting

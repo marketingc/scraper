@@ -1103,10 +1103,79 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-server.listen(port, () => {
-  console.log(`SEO Crawler Web Interface running on port ${port}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Health check available at: /health`);
-});
+// Production setup function
+async function setupProduction() {
+  if (!isProduction) return;
+  
+  console.log('🔧 Running production setup...');
+  
+  try {
+    // Wait for database initialization
+    await new Promise((resolve, reject) => {
+      let attempts = 0;
+      const maxAttempts = 30;
+      
+      const checkTables = () => {
+        attempts++;
+        db.db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='url_versions'", (err, row) => {
+          if (err) {
+            if (attempts >= maxAttempts) {
+              reject(new Error('Database initialization timeout'));
+            } else {
+              setTimeout(checkTables, 1000);
+            }
+          } else if (row) {
+            resolve();
+          } else {
+            console.log(`⏳ Waiting for database initialization... (${attempts}/${maxAttempts})`);
+            if (attempts >= maxAttempts) {
+              reject(new Error('Database tables not created within timeout'));
+            } else {
+              setTimeout(checkTables, 1000);
+            }
+          }
+        });
+      };
+      
+      checkTables();
+    });
+    
+    // Create admin user if environment variables are provided
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    
+    if (adminUsername && adminPassword) {
+      try {
+        const existingUser = await auth.getUserByUsername(adminUsername);
+        
+        if (!existingUser) {
+          await auth.createUser(adminUsername, adminPassword);
+          console.log(`✅ Admin user '${adminUsername}' created successfully`);
+        } else {
+          console.log(`ℹ️  Admin user '${adminUsername}' already exists`);
+        }
+      } catch (error) {
+        console.error('⚠️  Error creating admin user:', error.message);
+      }
+    }
+    
+    console.log('✅ Production setup completed');
+  } catch (error) {
+    console.error('❌ Production setup failed:', error.message);
+  }
+}
+
+// Start server with production setup
+async function startServer() {
+  await setupProduction();
+  
+  server.listen(port, () => {
+    console.log(`🚀 SEO Crawler Web Interface running on port ${port}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`❤️  Health check available at: /health`);
+  });
+}
+
+startServer();
 
 module.exports = app;

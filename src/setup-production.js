@@ -9,10 +9,40 @@ async function setupProduction() {
   try {
     // Initialize database
     const db = new Database();
-    const auth = new AuthManager(db);
     
-    // Wait for database to be ready
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait for database initialization to complete
+    await new Promise((resolve, reject) => {
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds timeout
+      
+      const checkTables = () => {
+        attempts++;
+        db.db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='url_versions'", (err, row) => {
+          if (err) {
+            console.error('Database check error:', err);
+            if (attempts >= maxAttempts) {
+              reject(new Error('Database initialization timeout'));
+            } else {
+              setTimeout(checkTables, 1000);
+            }
+          } else if (row) {
+            console.log('✅ Database tables initialized successfully');
+            resolve();
+          } else {
+            console.log(`⏳ Waiting for database initialization... (${attempts}/${maxAttempts})`);
+            if (attempts >= maxAttempts) {
+              reject(new Error('Database tables not created within timeout'));
+            } else {
+              setTimeout(checkTables, 1000);
+            }
+          }
+        });
+      };
+      
+      checkTables();
+    });
+    
+    const auth = new AuthManager(db);
     
     // Create admin user if environment variables are provided
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
