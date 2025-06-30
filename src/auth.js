@@ -109,7 +109,7 @@ const requireAuth = (req, res, next) => {
     // Check if it's an AJAX request by looking at headers
     const isAjax = req.xhr || 
                   req.headers['x-requested-with'] === 'XMLHttpRequest' ||
-                  req.headers.accept.indexOf('application/json') > -1 ||
+                  (req.headers.accept && req.headers.accept.indexOf('application/json') > -1) ||
                   req.headers['content-type'] === 'application/json';
     
     if (isAjax) {
