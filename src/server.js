@@ -67,6 +67,54 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Debug endpoint for production troubleshooting (remove after fixing)
+app.get('/debug/users', async (req, res) => {
+  if (process.env.NODE_ENV !== 'production') {
+    return res.status(404).json({ error: 'Debug endpoint only available in production' });
+  }
+  
+  try {
+    if (!auth) {
+      return res.json({ error: 'Auth system not initialized' });
+    }
+    
+    // Get user count and admin user info
+    const adminUsername = process.env.ADMIN_USERNAME;
+    let adminUser = null;
+    let userCount = 0;
+    
+    try {
+      if (adminUsername) {
+        adminUser = await auth.getUserByUsername(adminUsername);
+      }
+      
+      // Get total user count
+      await new Promise((resolve) => {
+        db.db.get('SELECT COUNT(*) as count FROM users', (err, result) => {
+          if (!err) userCount = result.count;
+          resolve();
+        });
+      });
+      
+    } catch (error) {
+      console.error('Debug query error:', error);
+    }
+    
+    res.json({
+      environment: process.env.NODE_ENV,
+      adminUsername: adminUsername,
+      adminUserExists: !!adminUser,
+      adminUserId: adminUser ? adminUser.id : null,
+      totalUsers: userCount,
+      authSystemReady: !!auth,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Middleware to ensure components are initialized (applied to all routes except health)
 app.use((req, res, next) => {
   // Skip initialization check for health endpoint
@@ -107,18 +155,47 @@ app.post('/login', redirectIfLoggedIn, async (req, res) => {
   try {
     const { username, password } = req.body;
     
+    console.log(`🔐 Login attempt - Username: '${username}', Environment: ${process.env.NODE_ENV}`);
+    
     if (!username || !password) {
+      console.log('❌ Login failed: Missing username or password');
       return res.render('login', { 
         error: 'Username and password are required', 
         message: null 
       });
     }
 
+    // Check if components are initialized
+    if (!auth) {
+      console.log('❌ Login failed: Authentication system not initialized');
+      return res.render('login', { 
+        error: 'System is still starting up. Please wait a moment and try again.', 
+        message: null 
+      });
+    }
+
     const user = await auth.authenticateUser(username, password);
     if (user) {
+      console.log(`✅ Login successful for user: ${username}`);
       req.session.user = user;
       res.redirect('/');
     } else {
+      console.log(`❌ Login failed: Invalid credentials for username '${username}'`);
+      
+      // In production, let's also check if the user exists for debugging
+      if (process.env.NODE_ENV === 'production') {
+        try {
+          const existingUser = await auth.getUserByUsername(username);
+          if (!existingUser) {
+            console.log(`⚠️  User '${username}' does not exist in database`);
+          } else {
+            console.log(`ℹ️  User '${username}' exists but password verification failed`);
+          }
+        } catch (debugError) {
+          console.error('Error during login debugging:', debugError.message);
+        }
+      }
+      
       res.render('login', { 
         error: 'Invalid username or password', 
         message: null 
@@ -1204,15 +1281,25 @@ async function setupApplication() {
     const adminUsername = process.env.ADMIN_USERNAME;
     const adminPassword = process.env.ADMIN_PASSWORD;
     
+    console.log(`🔧 Checking admin user setup - Username: '${adminUsername}', Password provided: ${!!adminPassword}`);
+    
     if (adminUsername && adminPassword) {
       try {
         const existingUser = await auth.getUserByUsername(adminUsername);
         
         if (!existingUser) {
           await auth.createUser(adminUsername, adminPassword);
-          console.log(`✅ Admin user '${adminUsername}' created successfully`);
+          console.log(`✅ Admin user '${adminUsername}' created successfully with password length: ${adminPassword.length}`);
+          
+          // Verify the user was created correctly
+          const verifyUser = await auth.getUserByUsername(adminUsername);
+          if (verifyUser) {
+            console.log(`✅ Admin user verification successful - User ID: ${verifyUser.id}`);
+          } else {
+            console.error('❌ Admin user verification failed - User not found after creation');
+          }
         } else {
-          console.log(`ℹ️  Admin user '${adminUsername}' already exists`);
+          console.log(`ℹ️  Admin user '${adminUsername}' already exists - ID: ${existingUser.id}`);
         }
       } catch (error) {
         console.error('⚠️  Error creating admin user:', error.message);
