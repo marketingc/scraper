@@ -1135,40 +1135,40 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-// Production setup function
-async function setupProduction() {
-  if (!isProduction) {
-    // For development, initialize components immediately
-    auth = new AuthManager(db);
-    queueManager = new QueueManager(io);
-    return;
-  }
-  
-  console.log('🔧 Running production setup...');
+// Database and component setup function
+async function setupApplication() {
+  console.log('🔧 Setting up application...');
   
   try {
-    // Wait for database initialization
+    // Wait for database initialization in both dev and production
     await new Promise((resolve, reject) => {
       let attempts = 0;
       const maxAttempts = 30;
       
       const checkTables = () => {
         attempts++;
-        db.db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='url_versions'", (err, row) => {
+        // Use a safer query that doesn't cause errors if tables don't exist
+        db.db.all("SELECT name FROM sqlite_master WHERE type='table'", (err, rows) => {
           if (err) {
+            console.log(`⚠️  Database error: ${err.message}, retrying... (${attempts}/${maxAttempts})`);
             if (attempts >= maxAttempts) {
               reject(new Error('Database initialization timeout'));
             } else {
               setTimeout(checkTables, 1000);
             }
-          } else if (row) {
-            resolve();
           } else {
-            console.log(`⏳ Waiting for database initialization... (${attempts}/${maxAttempts})`);
-            if (attempts >= maxAttempts) {
-              reject(new Error('Database tables not created within timeout'));
+            // Check if url_versions table exists in the results
+            const hasUrlVersions = rows && rows.some(row => row.name === 'url_versions');
+            if (hasUrlVersions) {
+              console.log('✅ Database tables initialized successfully');
+              resolve();
             } else {
-              setTimeout(checkTables, 1000);
+              console.log(`⏳ Waiting for database initialization... (${attempts}/${maxAttempts})`);
+              if (attempts >= maxAttempts) {
+                reject(new Error('Database tables not created within timeout'));
+              } else {
+                setTimeout(checkTables, 1000);
+              }
             }
           }
         });
@@ -1178,11 +1178,28 @@ async function setupProduction() {
     });
     
     // Now initialize database-dependent components
-    console.log('🔧 Initializing database-dependent components...');
+    console.log('🔧 Initializing application components...');
     auth = new AuthManager(db);
-    queueManager = new QueueManager(io);
+    queueManager = new QueueManager(io, db); // Pass the existing database instance
+    
+    // Start the queue processor after everything is ready
+    queueManager.startProcessor();
     console.log('✅ Components initialized successfully');
     
+  } catch (error) {
+    console.error('❌ Application setup failed:', error.message);
+    throw error;
+  }
+  
+  // Production-specific setup
+  if (!isProduction) {
+    console.log('✅ Development setup completed');
+    return;
+  }
+  
+  console.log('🔧 Running production-specific setup...');
+  
+  try {
     // Create admin user if environment variables are provided
     const adminUsername = process.env.ADMIN_USERNAME;
     const adminPassword = process.env.ADMIN_PASSWORD;
@@ -1208,9 +1225,9 @@ async function setupProduction() {
   }
 }
 
-// Start server with production setup
+// Start server with application setup
 async function startServer() {
-  await setupProduction();
+  await setupApplication();
   
   server.listen(port, () => {
     console.log(`🚀 SEO Crawler Web Interface running on port ${port}`);

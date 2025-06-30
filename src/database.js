@@ -117,8 +117,6 @@ class Database {
       this.db.run(`CREATE INDEX IF NOT EXISTS idx_reports_batch_id ON reports (batch_id)`);
       this.db.run(`CREATE INDEX IF NOT EXISTS idx_url_master_url ON url_master (url)`);
       this.db.run(`CREATE INDEX IF NOT EXISTS idx_url_master_last_crawled ON url_master (last_crawled DESC)`);
-      this.db.run(`CREATE INDEX IF NOT EXISTS idx_url_versions_master_id ON url_versions (url_master_id)`);
-      this.db.run(`CREATE INDEX IF NOT EXISTS idx_url_versions_created_at ON url_versions (created_at DESC)`);
       
       // Add retry functionality fields to existing job_queue table (migration)
       this.db.run(`ALTER TABLE job_queue ADD COLUMN next_retry_at DATETIME`, (err) => {
@@ -158,6 +156,10 @@ class Database {
           UNIQUE(url_master_id, version_number)
         )
       `);
+      
+      // Create indexes for url_versions table after it's created
+      this.db.run(`CREATE INDEX IF NOT EXISTS idx_url_versions_master_id ON url_versions (url_master_id)`);
+      this.db.run(`CREATE INDEX IF NOT EXISTS idx_url_versions_created_at ON url_versions (created_at DESC)`);
     });
   }
 

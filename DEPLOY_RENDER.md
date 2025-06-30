@@ -73,12 +73,15 @@ The application requires persistent storage for the SQLite database:
 
 ## 📋 Post-Deployment Steps
 
-### 1. First-Time Setup
-After deployment, your app will:
-- ✅ Automatically create the database and all required tables
-- ✅ Wait for database initialization to complete
+### 1. Automatic Setup
+After deployment, your app will automatically:
+- ✅ Create the database and all required tables
+- ✅ Wait for database initialization to complete  
+- ✅ Initialize all application components safely
 - ✅ Create initial admin user (if credentials provided)
-- ✅ Start the web server when ready
+- ✅ Start the web server when everything is ready
+
+**No manual setup required!** Everything happens automatically during startup.
 
 ### 2. Access Your Application
 1. **Find your app URL** in the Render dashboard

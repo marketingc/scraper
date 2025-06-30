@@ -5,8 +5,8 @@ const PerformanceOptimizer = require('./performance-optimizer');
 const cron = require('node-cron');
 
 class QueueManager {
-  constructor(io = null) {
-    this.db = new Database();
+  constructor(io = null, database = null) {
+    this.db = database || new Database();
     this.crawler = new SEOCrawler();
     this.reporter = new SEOReporter();
     this.io = io; // Socket.io instance for real-time updates
@@ -28,12 +28,17 @@ class QueueManager {
     
     console.log(`Queue Manager initialized with dynamic concurrency: ${this.maxConcurrentJobs} jobs`);
     
-    // Start the queue processor
-    this.startProcessor();
+    // Don't start the processor immediately - wait for explicit start
+    this.processorStarted = false;
   }
 
   // Start the background processor
   startProcessor() {
+    if (this.processorStarted) {
+      console.log('Queue processor already started');
+      return;
+    }
+    
     // Process jobs every 1 second for faster processing
     cron.schedule('*/1 * * * * *', () => {
       if (!this.isProcessing) {
@@ -41,6 +46,7 @@ class QueueManager {
       }
     });
     
+    this.processorStarted = true;
     console.log('Queue processor started');
   }
 
