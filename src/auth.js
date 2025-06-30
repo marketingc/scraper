@@ -3,101 +3,64 @@ const bcrypt = require('bcryptjs');
 class AuthManager {
   constructor(database) {
     this.db = database;
-  }
-
-  // Hash password
-  async hashPassword(password) {
-    const saltRounds = 12;
-    return await bcrypt.hash(password, saltRounds);
-  }
-
-  // Verify password
-  async verifyPassword(password, hashedPassword) {
-    return await bcrypt.compare(password, hashedPassword);
-  }
-
-  // Create user
-  async createUser(username, password, email = '') {
-    try {
-      const existingUser = await this.getUserByUsername(username);
-      if (existingUser) {
-        throw new Error('Username already exists');
+    // Hardcoded credentials
+    this.hardcodedUsers = {
+      admin: {
+        id: 1,
+        username: 'admin',
+        password: 'Aa456123',
+        email: 'admin@example.com',
+        created_at: new Date().toISOString(),
+        last_login: null
       }
-
-      console.log(`🔧 User Creation Debug: Creating user '${username}'`);
-      console.log(`🔧 User Creation Debug: Original password length: ${password.length}`);
-      console.log(`🔧 User Creation Debug: Original password: '${password}'`);
-      
-      const hashedPassword = await this.hashPassword(password);
-      console.log(`🔧 User Creation Debug: Hashed password length: ${hashedPassword.length}`);
-      console.log(`🔧 User Creation Debug: Hashed password starts with: ${hashedPassword.substring(0, 10)}...`);
-      
-      const userId = await this.db.createUser(username, hashedPassword, email);
-      console.log(`🔧 User Creation Debug: User created with ID: ${userId}`);
-      
-      return userId;
-    } catch (error) {
-      console.error(`🔧 User Creation Debug: Error creating user:`, error.message);
-      throw error;
-    }
+    };
   }
 
-  // Get user by username
-  async getUserByUsername(username) {
-    return await this.db.getUserByUsername(username);
-  }
-
-  // Get user by ID
-  async getUserById(id) {
-    return await this.db.getUserById(id);
-  }
-
-  // Authenticate user
+  // Authenticate user with hardcoded credentials
   async authenticateUser(username, password) {
     try {
-      const user = await this.getUserByUsername(username);
+      console.log(`🔍 Hardcoded Auth: Attempting login for '${username}'`);
+      
+      const user = this.hardcodedUsers[username];
       if (!user) {
-        console.log(`🔍 Auth Debug: User '${username}' not found`);
+        console.log(`🔍 Hardcoded Auth: User '${username}' not found in hardcoded users`);
         return null;
       }
 
-      console.log(`🔍 Auth Debug: User found - ID: ${user.id}, Username: ${user.username}`);
-      console.log(`🔍 Auth Debug: Input password length: ${password.length}`);
-      console.log(`🔍 Auth Debug: Stored hash length: ${user.password ? user.password.length : 'NULL'}`);
-      console.log(`🔍 Auth Debug: Stored hash starts with: ${user.password ? user.password.substring(0, 10) + '...' : 'NULL'}`);
+      console.log(`🔍 Hardcoded Auth: User found - Username: ${user.username}`);
+      console.log(`🔍 Hardcoded Auth: Input password: '${password}'`);
+      console.log(`🔍 Hardcoded Auth: Expected password: '${user.password}'`);
 
-      const isValidPassword = await this.verifyPassword(password, user.password);
-      console.log(`🔍 Auth Debug: Password verification result: ${isValidPassword}`);
+      const isValidPassword = password === user.password;
+      console.log(`🔍 Hardcoded Auth: Password match: ${isValidPassword}`);
       
       if (!isValidPassword) {
-        // Let's try to understand why bcrypt is failing
-        console.log(`🔍 Auth Debug: Testing bcrypt directly...`);
-        try {
-          const bcrypt = require('bcryptjs');
-          const directResult = await bcrypt.compare(password, user.password);
-          console.log(`🔍 Auth Debug: Direct bcrypt.compare result: ${directResult}`);
-          
-          // Test if the hash is valid format
-          const isValidHash = user.password && user.password.startsWith('$2');
-          console.log(`🔍 Auth Debug: Hash format valid (starts with $2): ${isValidHash}`);
-          
-        } catch (bcryptError) {
-          console.error(`🔍 Auth Debug: Bcrypt error:`, bcryptError.message);
-        }
-        
         return null;
       }
 
-      // Update last login
-      await this.db.updateLastLogin(user.id);
+      // Update last login time
+      user.last_login = new Date().toISOString();
 
       // Return user without password
       const { password: _, ...userWithoutPassword } = user;
+      console.log(`🔍 Hardcoded Auth: Login successful for '${username}'`);
       return userWithoutPassword;
     } catch (error) {
-      console.error(`🔍 Auth Debug: Authentication error:`, error.message);
+      console.error(`🔍 Hardcoded Auth: Authentication error:`, error.message);
       throw error;
     }
+  }
+
+  // Get user by username (hardcoded)
+  async getUserByUsername(username) {
+    const user = this.hardcodedUsers[username];
+    return user || null;
+  }
+
+  // Get user by ID (hardcoded)
+  async getUserById(id) {
+    const users = Object.values(this.hardcodedUsers);
+    return users.find(user => user.id === id) || null;
   }
 }
 
